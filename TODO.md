@@ -76,3 +76,6 @@ This TODO outlines the step-by-step flow to implement missing features: AI integ
 4. Phase 4 (AI)
 5. Phase 5 (external jobs)
 6. Phase 6 (testing)
+
+
+#  need gawin or suggest kayo.
