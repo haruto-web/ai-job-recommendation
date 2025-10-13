@@ -1,6 +1,6 @@
-# Roadmap: Complete Your AI-Powered Job Website
+# Roadmap: Complete Your Simplified AI Job Matching Website
 
-## Current Status (What's Working)
+## Current Status (What's Working) - You Are Here
 - ✅ User accounts with login/signup
 - ✅ Job seekers and employers (user types)
 - ✅ Employers can post jobs
@@ -8,22 +8,21 @@
 - ✅ Basic profiles with images
 
 ## Roadmap Overview
-This roadmap fixes the 3 missing features: Job Applications/Hiring, Payments (Manual/Auto), and AI Recommendations. Total estimated time: 4-6 weeks. Start with Phase 1.
+This simplified roadmap focuses on core features: Job Applications/Hiring and Simple AI Recommendations. No payments or external jobs to keep it easy. Total estimated time: 2-3 weeks. Start with Phase 1.
 
 ---
 
-## Phase 1: Database Foundation (Week 1) - Ready to Start
-**Goal**: Set up data structure for all new features.
+## Phase 1: Database Foundation (Week 1) - Ready to Start (Begin Here)
+**Goal**: Set up data structure for applications and profiles.
 
 **Tasks**:
 - [ ] Create applications table (tracks who applies to jobs)
-- [ ] Create user profiles table (skills, experience for AI)
-- [ ] Create payments tables (subscriptions, transactions)
+- [ ] Create user profiles table (skills for simple AI matching)
 - [ ] Update job/user tables with new links
 - [ ] Run database migrations
 
 **Dependencies**: None
-**Time**: 3-5 days
+**Time**: 2-3 days
 **Next**: Phase 2
 
 ---
@@ -39,85 +38,52 @@ This roadmap fixes the 3 missing features: Job Applications/Hiring, Payments (Ma
 - [ ] Update account pages
 
 **Dependencies**: Phase 1 complete
-**Time**: 5-7 days
+**Time**: 4-5 days
 **Next**: Phase 3
 
 ---
 
-## Phase 3: Payment System (Week 3) - Depends on Phase 2
-**Goal**: Add manual/auto payments for hiring and premium.
+## Phase 3: Simple AI Recommendations (Week 3) - Depends on Phase 2
+**Goal**: Basic job matching based on user skills.
 
 **Tasks**:
-- [ ] Install Stripe payment system
-- [ ] Manual pay: One-time payment when hiring
-- [ ] Auto pay: Recurring subscriptions for premium
-- [ ] Payment forms and "Upgrade" buttons
-- [ ] Handle payment errors
+- [ ] Install OpenAI for simple matching
+- [ ] Profile forms for skills (text input)
+- [ ] AI engine to match jobs to users (keyword-based via OpenAI)
+- [ ] Show "Recommended for You" on jobs page
+- [ ] Match scores (e.g., "70% match")
 
-**Dependencies**: Phase 2 complete, Stripe account
-**Time**: 5-7 days
+**Dependencies**: Phase 2 complete, OpenAI API key
+**Time**: 3-4 days
 **Next**: Phase 4
 
 ---
 
-## Phase 4: AI Recommendations (Week 4) - Depends on Phase 3
-**Goal**: Smart job matching based on user skills.
+## Phase 4: Testing & Launch (Week 4) - Depends on Phase 3
+**Goal**: Make sure everything works and launch.
 
 **Tasks**:
-- [ ] Install OpenAI for AI matching
-- [ ] Profile forms for skills/experience
-- [ ] AI engine to match jobs to users
-- [ ] Show "best matches" on jobs page
-- [ ] Match scores (e.g., "90% match")
-
-**Dependencies**: Phase 3 complete, OpenAI API key
-**Time**: 5-7 days
-**Next**: Phase 5
-
----
-
-## Phase 5: External Jobs (Week 5) - Optional, Depends on Phase 4
-**Goal**: Get more jobs from outside sources.
-
-**Tasks**:
-- [ ] Fetch jobs from APIs (like Indeed)
-- [ ] Add search/filter for external jobs
-- [ ] Daily automatic imports
-
-**Dependencies**: Phase 4 complete
-**Time**: 3-5 days
-**Next**: Phase 6
-
----
-
-## Phase 6: Testing & Launch (Week 6) - Depends on All Phases
-**Goal**: Make sure everything works perfectly.
-
-**Tasks**:
-- [ ] Test apply/hire/pay/AI flows
+- [ ] Test apply/hire/AI flows
 - [ ] Fix bugs and slow parts
 - [ ] Security checks
 - [ ] Performance optimization
 
-**Dependencies**: All phases complete
-**Time**: 3-5 days
+**Dependencies**: Phase 3 complete
+**Time**: 2-3 days
 **Launch Ready!**
 
 ---
 
 ## What You Need Before Starting
-- **Stripe Account**: For payments (free to sign up)
-- **OpenAI API Key**: For AI (paid, but cheap)
+- **OpenAI API Key**: For simple AI matching (free tier available)
 - **Time**: 1-2 hours/day to code
 
 ## Install These First
-- Backend: `composer require stripe/stripe-php openai-php/client`
-- Frontend: `npm install @stripe/stripe-js`
+- Backend: `composer require openai-php/client`
 
 ## Milestones & Progress
+- [x] Basics Done (Current Status)
 - [ ] Phase 1 Done
 - [ ] Phase 2 Done
 - [ ] Phase 3 Done
-- [ ] Phase 4 Done
-- [ ] Phase 5 Done (optional)
-- [ ] Phase 6 Done - Site Complete!
+- [ ] Phase 4 Done - Site Complete!
