@@ -1,0 +1,32 @@
+:root {
+  --primary-blue: #007BFF;
+  --secondary-light-blue: #6C757D;
+  --text-dark: #212529;
+  --bg-light: #FFFFFF;
+  --accent-blue: #28A745;
+  --shadow-dark: rgba(0, 0, 0, 0.1);
+  --gradient-primary: linear-gradient(135deg, #007BFF, #0056B3);
+  --gradient-secondary: linear-gradient(135deg, #F8F9FA, #E9ECEF);
+  --text-light: #FFFFFF;
+  --hover-shadow: rgba(0, 0, 0, 0.15);
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+  line-height: 1.6;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
