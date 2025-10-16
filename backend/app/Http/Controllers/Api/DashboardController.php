@@ -34,6 +34,13 @@ class DashboardController extends Controller
             ->with('job')
             ->get();
 
+        $incomingProjects = Application::where('user_id', $user->id)
+            ->where('status', 'accepted')
+            ->with('job')
+            ->get();
+
+        $profile = $user->profile; // Assuming User has profile relationship
+
         $transactions = [
             ['id' => 1, 'amount' => 500, 'type' => 'earned', 'description' => 'Payment for completed project', 'date' => '2024-10-15'],
             ['id' => 2, 'amount' => 200, 'type' => 'earned', 'description' => 'Freelance work', 'date' => '2024-10-10'],
@@ -44,6 +51,8 @@ class DashboardController extends Controller
         return response()->json([
             'user_type' => 'jobseeker',
             'applications' => $applications,
+            'incoming_projects' => $incomingProjects,
+            'profile' => $profile,
             'transactions' => $transactions,
             'total_earnings' => $totalEarnings,
         ]);
@@ -57,6 +66,10 @@ class DashboardController extends Controller
             $query->where('user_id', $user->id);
         })->with(['user', 'job'])->get();
 
+        $workingOnJobs = Application::whereHas('job', function ($query) use ($user) {
+            $query->where('user_id', $user->id);
+        })->where('status', 'accepted')->with(['user', 'job'])->get();
+
         $transactions = [
             ['id' => 1, 'amount' => -300, 'type' => 'paid', 'description' => 'Payment to freelancer', 'date' => '2024-10-14'],
             ['id' => 2, 'amount' => -150, 'type' => 'paid', 'description' => 'Project payment', 'date' => '2024-10-12'],
@@ -68,6 +81,7 @@ class DashboardController extends Controller
             'user_type' => 'employer',
             'jobs' => $jobs,
             'applications' => $applications,
+            'working_on_jobs' => $workingOnJobs,
             'transactions' => $transactions,
             'total_spent' => $totalSpent,
             'active_jobs' => $jobs->count(),

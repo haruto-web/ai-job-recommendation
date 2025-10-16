@@ -77,13 +77,26 @@ function Dashboard() {
               )}
             </div>
 
+            {dashboardData.profile && (
+              <div className="dashboard-section">
+                <h2>Your Profile</h2>
+                {dashboardData.profile.bio && <p><strong>Bio:</strong> {dashboardData.profile.bio}</p>}
+                {dashboardData.profile.skills && dashboardData.profile.skills.length > 0 && (
+                  <p><strong>Skills:</strong> {dashboardData.profile.skills.join(', ')}</p>
+                )}
+                {dashboardData.profile.experience_level && <p><strong>Experience Level:</strong> {dashboardData.profile.experience_level}</p>}
+              </div>
+            )}
+
             <div className="dashboard-section">
               <h2>Incoming Projects</h2>
-              {dashboardData.incoming_projects.length > 0 ? (
+              {dashboardData.incoming_projects && dashboardData.incoming_projects.length > 0 ? (
                 <div className="projects-list">
                   {dashboardData.incoming_projects.map(project => (
                     <div key={project.id} className="project-card">
                       <h3>{project.job.title}</h3>
+                      <p>Company: {project.job.company}</p>
+                      <p>Location: {project.job.location}</p>
                       <p>Status: {project.status}</p>
                     </div>
                   ))}
@@ -127,6 +140,23 @@ function Dashboard() {
                 </div>
               ) : (
                 <p>You haven't posted any jobs yet.</p>
+              )}
+            </div>
+
+            <div className="dashboard-section">
+              <h2>Working On Jobs</h2>
+              {dashboardData.working_on_jobs && dashboardData.working_on_jobs.length > 0 ? (
+                <div className="working-jobs-list">
+                  {dashboardData.working_on_jobs.map(app => (
+                    <div key={app.id} className="working-job-card">
+                      <h3>{app.job.title}</h3>
+                      <p>Worker: {app.user.name}</p>
+                      <p>Status: {app.status}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p>No jobs being worked on yet.</p>
               )}
             </div>
 

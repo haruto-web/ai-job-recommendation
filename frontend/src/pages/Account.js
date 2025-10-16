@@ -170,6 +170,22 @@ function Account({ isLoggedIn }) {
             <div className="jobseeker-info">
               <h3>Job Seeker Information</h3>
               <p>View your applications and earnings in the <a href="/dashboard">Dashboard</a>.</p>
+              <div className="user-background">
+                <h4>Your Background</h4>
+                {user.profile ? (
+                  <div>
+                    {user.profile.bio && <p><strong>Bio:</strong> {user.profile.bio}</p>}
+                    {user.profile.skills && user.profile.skills.length > 0 && (
+                      <p><strong>Skills:</strong> {user.profile.skills.join(', ')}</p>
+                    )}
+                    {user.profile.experience_level && <p><strong>Experience Level:</strong> {user.profile.experience_level}</p>}
+                    {user.profile.portfolio_url && <p><strong>Portfolio:</strong> <a href={user.profile.portfolio_url} target="_blank" rel="noopener noreferrer">{user.profile.portfolio_url}</a></p>}
+                    {user.profile.resume_url && <p><strong>Resume:</strong> <a href={user.profile.resume_url} target="_blank" rel="noopener noreferrer">{user.profile.resume_url}</a></p>}
+                  </div>
+                ) : (
+                  <p>No profile information available. Update your profile to improve job matches.</p>
+                )}
+              </div>
             </div>
           )}
 
