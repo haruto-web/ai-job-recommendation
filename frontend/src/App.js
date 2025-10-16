@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import About from './pages/About';
 import Jobs from './pages/Jobs';
 import Account from './pages/Account';
+import Dashboard from './pages/Dashboard';
 import './App.css';
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -93,6 +94,7 @@ function App() {
           <Route path="/register" element={isLoggedIn ? <Navigate to="/account" /> : <Register onRegister={handleRegister} />} />
           <Route path="/jobs" element={isLoggedIn ? <Jobs /> : <Navigate to="/login" />} />
           <Route path="/account" element={isLoggedIn ? <Account isLoggedIn={isLoggedIn} /> : <Navigate to="/login" />} />
+          <Route path="/dashboard" element={isLoggedIn ? <Dashboard /> : <Navigate to="/login" />} />
         </Routes>
       </div>
     </Router>

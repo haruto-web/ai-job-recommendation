@@ -15,6 +15,9 @@ function Navigation({ isLoggedIn, onLogin, onRegister, onLogout }) {
         {isLoggedIn && (
           <>
             <li className="navigation-item">
+              <Link to="/dashboard" className="navigation-link">Dashboard</Link>
+            </li>
+            <li className="navigation-item">
               <Link to="/jobs" className="navigation-link">Jobs</Link>
             </li>
             <li className="navigation-item">

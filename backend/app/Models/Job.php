@@ -25,4 +25,14 @@ class Job extends Model
         'requirements' => 'array',
         'salary' => 'float',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function applications()
+    {
+        return $this->hasMany(Application::class, 'job_id');
+    }
 }

@@ -50,4 +50,19 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function profile()
+    {
+        return $this->hasOne(UserProfile::class);
+    }
+
+    public function jobs()
+    {
+        return $this->hasMany(Job::class);
+    }
+
+    public function applications()
+    {
+        return $this->hasMany(Application::class);
+    }
 }

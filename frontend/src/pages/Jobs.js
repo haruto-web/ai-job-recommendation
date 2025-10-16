@@ -7,6 +7,7 @@ const API_URL = process.env.REACT_APP_API_URL;
 function Jobs() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [applying, setApplying] = useState(null);
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -21,6 +22,22 @@ function Jobs() {
     };
     fetchJobs();
   }, []);
+
+  const handleApply = async (jobId) => {
+    setApplying(jobId);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_URL}/applications`, { job_id: jobId }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('Application submitted successfully!');
+    } catch (error) {
+      console.error('Failed to apply:', error);
+      alert('Failed to apply for the job. Please try again.');
+    } finally {
+      setApplying(null);
+    }
+  };
 
   if (loading) {
     return <div>Loading jobs...</div>;
@@ -44,6 +61,13 @@ function Jobs() {
                 <p>{job.company} - {job.location} - {job.type}</p>
                 {job.salary && <p>Salary: ${job.salary}</p>}
                 <span className="match-score">AI Match</span>
+                <button
+                  onClick={() => handleApply(job.id)}
+                  disabled={applying === job.id}
+                  className="apply-btn"
+                >
+                  {applying === job.id ? 'Applying...' : 'Apply'}
+                </button>
               </div>
             )) : (
               <p>No jobs available.</p>

@@ -1,0 +1,120 @@
+.dashboard-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.dashboard-hero {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.dashboard-hero h1 {
+  color: #333;
+  font-size: 2.5em;
+  margin-bottom: 10px;
+}
+
+.dashboard-hero p {
+  color: #666;
+  font-size: 1.2em;
+}
+
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.dashboard-section {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-section h2 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 1.5em;
+}
+
+.applications-list,
+.projects-list,
+.transactions-list,
+.jobs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.application-card,
+.project-card,
+.transaction-card,
+.job-card {
+  background: white;
+  padding: 15px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.application-card h3,
+.project-card h3,
+.job-card h3 {
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.application-card p,
+.project-card p,
+.transaction-card p,
+.job-card p {
+  margin: 5px 0;
+  color: #666;
+}
+
+.status-pending {
+  color: #ffc107;
+  font-weight: bold;
+}
+
+.status-accepted {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.status-rejected {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.action-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.action-btn:hover {
+  background: #0056b3;
+}
+
+.action-btn.reject {
+  background: #dc3545;
+}
+
+.action-btn.reject:hover {
+  background: #c82333;
+}
+
+.footer {
+  text-align: center;
+  margin-top: 40px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}

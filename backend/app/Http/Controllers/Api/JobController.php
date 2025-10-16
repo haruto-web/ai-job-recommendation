@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Job;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class JobController extends Controller
@@ -37,7 +38,14 @@ class JobController extends Controller
             'requirements' => 'array',
         ]);
 
-        $job = Job::create($validated);
+        $user = Auth::user();
+
+        // Only employers can create jobs
+        if ($user->user_type !== 'employer') {
+            return response()->json(['message' => 'Only employers can create jobs'], Response::HTTP_FORBIDDEN);
+        }
+
+        $job = Job::create(array_merge($validated, ['user_id' => $user->id]));
 
         return response()->json($job, Response::HTTP_CREATED);
     }
@@ -47,6 +55,13 @@ class JobController extends Controller
         $job = Job::find($id);
         if (!$job) {
             return response()->json(['message' => 'Job not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $user = Auth::user();
+
+        // Only the job owner can update the job
+        if ($job->user_id !== $user->id) {
+            return response()->json(['message' => 'You can only update your own jobs'], Response::HTTP_FORBIDDEN);
         }
 
         $validated = $request->validate([
@@ -68,6 +83,13 @@ class JobController extends Controller
         $job = Job::find($id);
         if (!$job) {
             return response()->json(['message' => 'Job not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $user = Auth::user();
+
+        // Only the job owner can delete the job
+        if ($job->user_id !== $user->id) {
+            return response()->json(['message' => 'You can only delete your own jobs'], Response::HTTP_FORBIDDEN);
         }
 
         $job->delete();

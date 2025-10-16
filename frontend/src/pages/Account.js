@@ -161,7 +161,24 @@ function Account({ isLoggedIn }) {
             <div className="detail-item">
               <strong>Email Verified:</strong> {user.email_verified_at ? 'Yes' : 'No'}
             </div>
+            <div className="detail-item">
+              <strong>User Type:</strong> {userType === 'jobseeker' ? 'Job Seeker' : 'Employer'}
+            </div>
           </div>
+
+          {userType === 'jobseeker' && (
+            <div className="jobseeker-info">
+              <h3>Job Seeker Information</h3>
+              <p>View your applications and earnings in the <a href="/dashboard">Dashboard</a>.</p>
+            </div>
+          )}
+
+          {userType === 'employer' && (
+            <div className="employer-info">
+              <h3>Employer Information</h3>
+              <p>Manage your jobs and applications in the <a href="/dashboard">Dashboard</a>.</p>
+            </div>
+          )}
         </div>
       </section>
 
