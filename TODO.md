@@ -47,6 +47,7 @@ This simplified roadmap focuses on core features: Job Applications/Hiring and Si
 
 ## Additional Tasks
 - [x] Add "Our Team" section to About page with team members' images and names in horizontal layout
+- [ ] Add resume submission area for job seekers: Allow users to upload resume files (PDF/DOCX), save in database, and provide access to edit or delete submitted resumes. This feature should be accessible via the Jobs navigation. For employers: Enable job creation in the dashboard, and allow employers to view jobs posted by other employers in the Jobs section.
 
 ---
 
