@@ -1,1 +1,0 @@
-tanginamo ven andrew mirasol
