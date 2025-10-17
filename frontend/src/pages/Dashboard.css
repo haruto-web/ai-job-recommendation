@@ -1,4 +1,4 @@
-.dashboard-container {
+  .dashboard-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
@@ -22,9 +22,14 @@
 }
 
 .dashboard-content {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 30px;
+}
+
+.jobseeker-dashboard,
+.employer-dashboard {
+  display: contents;
 }
 
 .dashboard-section {
@@ -32,12 +37,25 @@
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  grid-column: span 2;
 }
 
 .dashboard-section h2 {
   color: #333;
   margin-bottom: 15px;
   font-size: 1.5em;
+}
+
+/* Jobseeker specific sections */
+.jobseeker-dashboard .dashboard-section:nth-child(2),
+.jobseeker-dashboard .dashboard-section:nth-child(3) {
+  grid-column: span 1;
+}
+
+/* Employer specific sections */
+.employer-dashboard .dashboard-section:nth-child(2),
+.employer-dashboard .dashboard-section:nth-child(3) {
+  grid-column: span 1;
 }
 
 .applications-list,
@@ -115,6 +133,7 @@
   text-align: center;
   margin-top: 40px;
   padding: 20px;
-  background: #f8f9fa;
+  background: var(--gradient-primary);
+  color: var(--text-dark);
   border-radius: 8px;
 }

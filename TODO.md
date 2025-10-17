@@ -36,14 +36,19 @@ This simplified roadmap focuses on core features: Job Applications/Hiring and Si
 - [x] For employers, add "working_on_jobs" (accepted applications)
 - [x] Update Navigation.js to include Dashboard link
 - [x] Update Account.js to display user background (from UserProfile model)
-- [ ] Fix dashboard alignment issues for jobseeker and employer user types
-- [ ] Ensure dashboard shows correct content: Jobseeker (accepted jobs, working on jobs, transactions); Employer (created jobs, applications, working jobs)
-- [ ] Hide dashboard access if no user is logged in (redirect or protect route)
-- [ ] Test the apply/hire flow end-to-end
+- [x] Fix dashboard alignment issues for jobseeker and employer user types
+- [x] Ensure dashboard shows correct content: Jobseeker (accepted jobs, working on jobs, transactions); Employer (created jobs, applications, working jobs)
+- [x] Hide dashboard access if no user is logged in (redirect or protect route)
+- [x] Test the apply/hire flow end-to-end
 
 **Dependencies**: Phase 1 complete
 **Time**: 4-5 days
 **Next**: Phase 3
+
+---
+
+## Additional Tasks
+- [x] Add "Our Team" section to About page with team members' images and names in horizontal layout
 
 ---
 

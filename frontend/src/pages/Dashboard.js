@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -7,16 +8,24 @@ const API_URL = process.env.REACT_APP_API_URL;
 function Dashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const fetchDashboard = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
       const response = await axios.get(`${API_URL}/dashboard`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setDashboardData(response.data);
     } catch (error) {
       console.error('Failed to fetch dashboard:', error);
+      if (error.response && error.response.status === 401) {
+        navigate('/login');
+      }
     } finally {
       setLoading(false);
     }
@@ -24,7 +33,7 @@ function Dashboard() {
 
   useEffect(() => {
     fetchDashboard();
-  }, []);
+  }, [navigate]);
 
   const handleApplicationAction = async (applicationId, status) => {
     try {
@@ -59,6 +68,11 @@ function Dashboard() {
         {dashboardData.user_type === 'jobseeker' ? (
           <div className="jobseeker-dashboard">
             <div className="dashboard-section">
+              <h2>Job Seeker Dashboard</h2>
+              <p>Manage your job applications and track your progress</p>
+            </div>
+
+            <div className="dashboard-section">
               <h2>Your Applications</h2>
               {dashboardData.applications.length > 0 ? (
                 <div className="applications-list">
@@ -89,7 +103,7 @@ function Dashboard() {
             )}
 
             <div className="dashboard-section">
-              <h2>Incoming Projects</h2>
+              <h2>Accepted Jobs (Working On)</h2>
               {dashboardData.incoming_projects && dashboardData.incoming_projects.length > 0 ? (
                 <div className="projects-list">
                   {dashboardData.incoming_projects.map(project => (
@@ -102,12 +116,12 @@ function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <p>No incoming projects.</p>
+                <p>No accepted jobs yet.</p>
               )}
             </div>
 
             <div className="dashboard-section">
-              <h2>Transactions</h2>
+              <h2>Earnings & Transactions</h2>
               <p>Total Earnings: ${dashboardData.total_earnings}</p>
               {dashboardData.transactions.length > 0 ? (
                 <div className="transactions-list">
@@ -127,7 +141,12 @@ function Dashboard() {
         ) : (
           <div className="employer-dashboard">
             <div className="dashboard-section">
-              <h2>Your Jobs</h2>
+              <h2>Employer Dashboard</h2>
+              <p>Manage your job postings and review applications</p>
+            </div>
+
+            <div className="dashboard-section">
+              <h2>Your Job Postings</h2>
               <p>Active Jobs: {dashboardData.active_jobs}</p>
               {dashboardData.jobs.length > 0 ? (
                 <div className="jobs-list">
@@ -144,7 +163,7 @@ function Dashboard() {
             </div>
 
             <div className="dashboard-section">
-              <h2>Working On Jobs</h2>
+              <h2>Hired Workers</h2>
               {dashboardData.working_on_jobs && dashboardData.working_on_jobs.length > 0 ? (
                 <div className="working-jobs-list">
                   {dashboardData.working_on_jobs.map(app => (
@@ -156,12 +175,12 @@ function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <p>No jobs being worked on yet.</p>
+                <p>No hired workers yet.</p>
               )}
             </div>
 
             <div className="dashboard-section">
-              <h2>Applications</h2>
+              <h2>Job Applications</h2>
               <p>Total Applications: {dashboardData.total_applications}</p>
               {dashboardData.applications.length > 0 ? (
                 <div className="applications-list">
@@ -181,7 +200,7 @@ function Dashboard() {
             </div>
 
             <div className="dashboard-section">
-              <h2>Transactions</h2>
+              <h2>Payments & Transactions</h2>
               <p>Total Spent: ${dashboardData.total_spent}</p>
               {dashboardData.transactions.length > 0 ? (
                 <div className="transactions-list">

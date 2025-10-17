@@ -31,6 +31,32 @@ function About() {
         </div>
       </section>
 
+      <section className="team-section">
+        <h2>Our Team</h2>
+        <div className="team-members">
+          <div className="team-member">
+            <img src="/guarino.png" alt="Jaycee Thea Guarino" />
+            <p>Jaycee Thea Guarino</p>
+          </div>
+          <div className="team-member">
+            <img src="/kurt.jpg" alt="Kurt Santos" />
+            <p>Kurt Santos</p>
+          </div>
+          <div className="team-member">
+            <img src="/ryu.jpg" alt="Joseph Cahindi" />
+            <p>Joseph Cahindi</p>
+          </div>
+          <div className="team-member">
+            <img src="/berna.jpg" alt="Denielle Bernardino" />
+            <p>Denielle Bernardino</p>
+          </div>
+          <div className="team-member">
+            <img src="/ven.jpg" alt="Ven Andrew Mirasol" />
+            <p>Ven Andrew Mirasol</p>
+          </div>
+        </div>
+      </section>
+
       <footer className="footer">
         <p>&copy; {new Date().getFullYear()} AI-Powered Job Recommendation</p>
         <p>Helping you connect with the right opportunities</p>
