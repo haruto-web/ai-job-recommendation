@@ -22,7 +22,6 @@ This simplified roadmap focuses on core features: Job Applications/Hiring and Si
 - [x] Run database migrations
 
 **Dependencies**: None
-**Time**: 2-3 days
 **Next**: Phase 2
 
 ---
@@ -42,7 +41,6 @@ This simplified roadmap focuses on core features: Job Applications/Hiring and Si
 - [x] Test the apply/hire flow end-to-end
 
 **Dependencies**: Phase 1 complete
-**Time**: 4-5 days
 **Next**: Phase 3
 
 ---
@@ -66,7 +64,6 @@ This simplified roadmap focuses on core features: Job Applications/Hiring and Si
 - [ ] Match scores (e.g., "70% match")
 
 **Dependencies**: Phase 2 complete, OpenAI API key
-**Time**: 3-4 days
 **Next**: Phase 4
 
 ---
@@ -81,14 +78,12 @@ This simplified roadmap focuses on core features: Job Applications/Hiring and Si
 - [ ] Performance optimization
 
 **Dependencies**: Phase 3 complete
-**Time**: 2-3 days
 **Launch Ready!**
 
 ---
 
 ## What You Need Before Starting
 - **OpenAI API Key**: For simple AI matching (free tier available)
-- **Time**: 1-2 hours/day to code
 
 ## Install These First
 - Backend: `composer require openai-php/client`
