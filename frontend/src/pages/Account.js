@@ -53,7 +53,7 @@ function Account({ isLoggedIn }) {
       const formData = new FormData();
       formData.append('profile_image', selectedFile);
 
-      const response = await axios.put(`${API_URL}/user/profile-image`, formData, {
+      const response = await axios.post(`${API_URL}/user/profile-image`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
@@ -61,7 +61,8 @@ function Account({ isLoggedIn }) {
       });
       setUser(response.data);
       setSelectedFile(null);
-      alert('Profile image uploaded successfully!');
+      // Auto-refresh the page to show the updated profile image
+      window.location.reload();
     } catch (error) {
       console.error('Failed to upload image:', error);
       alert('Failed to upload profile image. Please try again.');
@@ -101,7 +102,7 @@ function Account({ isLoggedIn }) {
                   style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} 
                 />
               ) : (
-                <span>{user.name.charAt(0).toUpperCase()}</span>
+                <span>{user && user.name ? user.name.charAt(0).toUpperCase() : '?'}</span>
               )}
             </div>
             <div className="profile-info">

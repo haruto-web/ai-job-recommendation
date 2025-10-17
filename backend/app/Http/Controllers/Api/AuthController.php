@@ -109,7 +109,7 @@ class AuthController extends Controller
 
         // Delete old image if exists
         if ($user->profile_image) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($user->profile_image);
+            Storage::disk('public')->delete($user->profile_image);
         }
 
         $path = $request->file('profile_image')->store('avatars', 'public');
@@ -123,5 +123,30 @@ class AuthController extends Controller
     public function user(Request $request)
     {
         return response()->json($request->user());
+    }
+
+    public function uploadResume(Request $request)
+    {
+        $request->validate([
+            'resume' => 'required|file|mimes:pdf,doc,docx|max:5120', // 5MB max
+        ]);
+
+        $user = $request->user();
+
+        // Delete old resume if exists
+        if ($user->profile && $user->profile->resume_url) {
+            Storage::disk('public')->delete($user->profile->resume_url);
+        }
+
+        $path = $request->file('resume')->store('resumes', 'public');
+
+        // Ensure user has a profile
+        if (!$user->profile) {
+            $user->profile()->create(['resume_url' => $path]);
+        } else {
+            $user->profile->update(['resume_url' => $path]);
+        }
+
+        return response()->json($user->load('profile'));
     }
 }

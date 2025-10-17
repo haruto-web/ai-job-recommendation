@@ -1,11 +1,17 @@
-# Roadmap: Complete Your Simplified AI Job Matching Website
-
 ## Current Status (What's Working) - You Are Here
 - ✅ User accounts with login/signup
 - ✅ Job seekers and employers (user types)
 - ✅ Employers can post jobs
 - ✅ Job seekers can view jobs
 - ✅ Basic profiles with images
+- ✅ UI for "Create New Job" form has been made elegant with labels, modern styling, shadows, hover effects, and responsive design.
+- ✅ Fixed 422 Unprocessable Content error for profile image uploads by changing PUT to POST method in both backend routes and frontend API calls.
+- ✅ Added null safety check for user.name in Account.js to prevent runtime errors.
+- ✅ Added auto-refresh functionality after profile image upload to immediately display the updated image.
+
+### Issues:
+ - having problem in submitting the resume in the database need to be fix.
+ - need to change database usage. now in sqllite to change in mysql. not prio. 
 
 ## Roadmap Overview
 This simplified roadmap focuses on core features: Job Applications/Hiring and Simple AI Recommendations. No payments or external jobs to keep it easy. Total estimated time: 2-3 weeks. Start with Phase 1.
@@ -46,8 +52,42 @@ This simplified roadmap focuses on core features: Job Applications/Hiring and Si
 ---
 
 ## Additional Tasks
+- [x] Add labels to the job form inputs in Dashboard.js for better accessibility and elegance.
+- [x] Update Dashboard.css to style the job-form with modern, elegant design: flex layout, card appearance, shadows, hover effects, and responsive design.
 - [x] Add "Our Team" section to About page with team members' images and names in horizontal layout
-- [ ] Add resume submission area for job seekers: Allow users to upload resume files (PDF/DOCX), save in database, and provide access to edit or delete submitted resumes. This feature should be accessible via the Jobs navigation. For employers: Enable job creation in the dashboard, and allow employers to view jobs posted by other employers in the Jobs section. add this
+- [x] Add resume submission area for job seekers: Allow users to upload resume files (PDF/DOCX), save in database, and provide access to edit or delete submitted resumes. This feature should be accessible via the Jobs navigation. For employers: Enable job creation in the dashboard, and allow employers to view jobs posted by other employers in the Jobs section.
+
+
+## Task: Add Resume Submission for Job Seekers and Job Creation for Employers
+### Information Gathered
+- Backend: Laravel API with AuthController (handles profile image upload), JobController (handles job creation), UserProfile model (has resume_url field).
+- Frontend: React with Jobs page (shows jobs, apply), Dashboard page (shows user-specific data).
+- Resume: UserProfile has resume_url, but no upload method yet. Need to add uploadResume in AuthController.
+- Job Creation: Already exists in JobController store, but not exposed in frontend Dashboard for employers.
+- Jobs Page: Shows all jobs, but employers need to see all jobs, jobseekers need resume upload.
+
+### Plan
+- Backend Changes:
+  - Add uploadResume method in AuthController to handle PDF/DOCX uploads, store in 'resumes' folder, update UserProfile resume_url.
+  - Add route in api.php for PUT /user/resume.
+  - Ensure UserProfile can store multiple resumes if needed, but for now, one resume_url.
+- Frontend Changes:
+  - Jobs.js: For jobseekers, add a section to upload resume (file input, upload button), list uploaded resumes with delete button.
+  - Dashboard.js: For employers, add a form to create job (title, description, etc.), submit to POST /jobs.
+  - Jobs.js: Ensure employers can see all jobs, perhaps add a "Create Job" link or button if employer.
+
+### Dependent Files to Edit
+- backend/app/Http/Controllers/Api/AuthController.php: Add uploadResume method.
+- backend/routes/api.php: Add route for resume upload.
+- frontend/src/pages/Jobs.js: Add resume upload UI for jobseekers.
+- frontend/src/pages/Dashboard.js: Add job creation form for employers.
+
+### Followup Steps
+- Test resume upload: Upload PDF/DOCX, check storage, update profile.
+- Test job creation: Create job from dashboard, verify in jobs list.
+- Test delete resume: Delete uploaded resume.
+- Update main TODO.md to mark this task as done.
+
 
 ---
 

@@ -19,6 +19,7 @@ class Job extends Model
         'type',
         'salary',
         'requirements',
+        'user_id',
     ];
 
     protected $casts = [

@@ -17,7 +17,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('user', [AuthController::class, 'user']);
     Route::put('user', [AuthController::class, 'updateUser']);
-    Route::put('user/profile-image', [AuthController::class, 'uploadProfileImage']);
+    Route::post('user/profile-image', [AuthController::class, 'uploadProfileImage']);
+    Route::put('user/resume', [AuthController::class, 'uploadResume']);
     Route::post('jobs', [JobController::class, 'store']);
     Route::put('jobs/{id}', [JobController::class, 'update']);
     Route::delete('jobs/{id}', [JobController::class, 'destroy']);

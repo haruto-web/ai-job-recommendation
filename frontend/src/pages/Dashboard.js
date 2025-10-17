@@ -9,6 +9,16 @@ function Dashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const [jobForm, setJobForm] = useState({
+    title: '',
+    description: '',
+    company: '',
+    location: '',
+    type: 'full-time',
+    salary: '',
+    requirements: []
+  });
+  const [creatingJob, setCreatingJob] = useState(false);
 
   const fetchDashboard = async () => {
     try {
@@ -46,6 +56,38 @@ function Dashboard() {
     } catch (error) {
       console.error('Failed to update application:', error);
       alert('Failed to update application. Please try again.');
+    }
+  };
+
+  const handleJobFormChange = (e) => {
+    const { name, value } = e.target;
+    setJobForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCreateJob = async (e) => {
+    e.preventDefault();
+    setCreatingJob(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_URL}/jobs`, jobForm, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('Job created successfully!');
+      setJobForm({
+        title: '',
+        description: '',
+        company: '',
+        location: '',
+        type: 'full-time',
+        salary: '',
+        requirements: []
+      });
+      fetchDashboard(); // Refresh dashboard data
+    } catch (error) {
+      console.error('Failed to create job:', error);
+      alert('Failed to create job. Please try again.');
+    } finally {
+      setCreatingJob(false);
     }
   };
 
@@ -143,6 +185,81 @@ function Dashboard() {
             <div className="dashboard-section">
               <h2>Employer Dashboard</h2>
               <p>Manage your job postings and review applications</p>
+            </div>
+
+            <div className="dashboard-section">
+              <h2>Create New Job</h2>
+              <form onSubmit={handleCreateJob} className="job-form">
+                <div className="form-group">
+                  <label htmlFor="title">Job Title</label>
+                  <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    placeholder="Job Title"
+                    value={jobForm.title}
+                    onChange={handleJobFormChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="description">Job Description</label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    placeholder="Job Description"
+                    value={jobForm.description}
+                    onChange={handleJobFormChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="company">Company</label>
+                  <input
+                    type="text"
+                    id="company"
+                    name="company"
+                    placeholder="Company"
+                    value={jobForm.company}
+                    onChange={handleJobFormChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="location">Location</label>
+                  <input
+                    type="text"
+                    id="location"
+                    name="location"
+                    placeholder="Location"
+                    value={jobForm.location}
+                    onChange={handleJobFormChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="type">Job Type</label>
+                  <select id="type" name="type" value={jobForm.type} onChange={handleJobFormChange}>
+                    <option value="full-time">Full-time</option>
+                    <option value="part-time">Part-time</option>
+                    <option value="contract">Contract</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="salary">Salary (optional)</label>
+                  <input
+                    type="number"
+                    id="salary"
+                    name="salary"
+                    placeholder="Salary (optional)"
+                    value={jobForm.salary}
+                    onChange={handleJobFormChange}
+                  />
+                </div>
+                <button type="submit" disabled={creatingJob} className="create-job-btn">
+                  {creatingJob ? 'Creating...' : 'Create Job'}
+                </button>
+              </form>
             </div>
 
             <div className="dashboard-section">

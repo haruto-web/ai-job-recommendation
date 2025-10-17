@@ -24,6 +24,10 @@ return [
         'http://127.0.0.1:5173',
         'http://localhost:3000', // Create React App dev server
         'http://127.0.0.1:3000',
+        'http://localhost:3001', // Additional port for Create React App
+        'http://127.0.0.1:3001',
+        'http://localhost:3003', // Current React dev server port
+        'http://127.0.0.1:3003',
     ],
 
     'allowed_origins_patterns' => [],
