@@ -30,7 +30,7 @@ function Register({ onRegister }) {
   };
 
   return (
-    <div className="register-container" style={{ maxWidth: '400px', margin: '0 auto', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
+    <div className="register-container" style={{ maxWidth: '400px', margin: '0 auto', padding: '40px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
       <h2 style={{ textAlign: 'center', marginBottom: '20px', fontFamily: 'Arial, sans-serif', color: '#333' }}>Register</h2>
       {error && <p className="error-msg" style={{ color: 'red', textAlign: 'center', marginBottom: '15px' }}>{error}</p>}
       <form onSubmit={handleSubmit}>

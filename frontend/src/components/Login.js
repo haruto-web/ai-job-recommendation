@@ -16,7 +16,7 @@ function Login({ onLogin }) {
   };
 
   return (
-    <div className="login-container" style={{ maxWidth: '400px', margin: '0 auto', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
+    <div className="login-container" style={{ maxWidth: '400px', margin: '0 auto', padding: '40px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
       <h2 style={{ textAlign: 'center', marginBottom: '20px', fontFamily: 'Arial, sans-serif', color: '#333' }}>Login</h2>
       {error && <p className="error-msg" style={{ color: 'red', textAlign: 'center', marginBottom: '15px' }}>{error}</p>}
       <form onSubmit={handleSubmit}>
@@ -36,7 +36,7 @@ function Login({ onLogin }) {
           required
           style={{ width: '100%', padding: '8px', marginBottom: '20px', borderRadius: '4px', border: '1px solid #ccc' }}
         />
-        <button type="submit" style={{ width: '100%', padding: '10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Log In</button>
+        <button type="submit" style={{ width: '104%', padding: '10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Log In</button>
       </form>
     </div>
   );
