@@ -97,7 +97,7 @@ function Account({ isLoggedIn }) {
             <div className="profile-avatar">
               {user.profile_image ? (
                 <img 
-                  src={`${API_URL.replace('/api', '')}/storage/${user.profile_image}`} 
+                  src={`http://localhost:8000/storage/${user.profile_image}`} 
                   alt="Profile" 
                   style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} 
                 />
@@ -121,7 +121,7 @@ function Account({ isLoggedIn }) {
                 Choose File
               </label>
               <button onClick={handleImageUpload} disabled={!selectedFile} className="upload-btn">
-                Upload Profile Image
+                {selectedFile ? 'Upload Profile Image' : 'Select Image First'}
               </button>
               {selectedFile && (
                 <p className="selected-file-text">Selected file: {selectedFile.name}</p>
@@ -135,12 +135,14 @@ function Account({ isLoggedIn }) {
               <button
                 className={`type-btn ${userType === 'jobseeker' ? 'active' : ''}`}
                 onClick={() => setUserType('jobseeker')}
+                type="button"
               >
                 Job Seeker
               </button>
               <button
                 className={`type-btn ${userType === 'employer' ? 'active' : ''}`}
                 onClick={() => setUserType('employer')}
+                type="button"
               >
                 Employer
               </button>
@@ -151,7 +153,9 @@ function Account({ isLoggedIn }) {
                 : 'You are currently set as an employer. You can post jobs and find candidates.'
               }
             </p>
-            <button onClick={handleSaveUserType} className="save-btn">Save Changes</button>
+            <button onClick={handleSaveUserType} className="save-btn" type="button">
+              Save Changes
+            </button>
           </div>
 
           <div className="profile-details">

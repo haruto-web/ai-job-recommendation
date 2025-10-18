@@ -1,43 +1,87 @@
 import React, { useState } from 'react';
+import './Auth.css';
 
 function Login({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setLoading(true);
     try {
       await onLogin(email, password);
     } catch (err) {
       setError('Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="login-container" style={{ maxWidth: '400px', margin: '0 auto', padding: '40px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '20px', fontFamily: 'Arial, sans-serif', color: '#333' }}>Login</h2>
-      {error && <p className="error-msg" style={{ color: 'red', textAlign: 'center', marginBottom: '15px' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Email:</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ width: '100%', padding: '8px', marginBottom: '15px', borderRadius: '4px', border: '1px solid #ccc' }}
-        />
-        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Password:</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={{ width: '100%', padding: '8px', marginBottom: '20px', borderRadius: '4px', border: '1px solid #ccc' }}
-        />
-        <button type="submit" style={{ width: '104%', padding: '10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Log In</button>
-      </form>
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+          <h2>Welcome Back</h2>
+          <p>Sign in to your account</p>
+        </div>
+        
+        {error && (
+          <div className="error-message">
+            <span className="error-icon">⚠️</span>
+            {error}
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-group">
+            <label htmlFor="email">Email Address</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="Enter your email"
+              className="form-input"
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder="Enter your password"
+              className="form-input"
+            />
+          </div>
+          
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="auth-button"
+          >
+            {loading ? (
+              <>
+                <span className="spinner"></span>
+                Signing In...
+              </>
+            ) : (
+              'Sign In'
+            )}
+          </button>
+        </form>
+        
+        <div className="auth-footer">
+          <p>Don't have an account? <a href="/register" className="auth-link">Sign up here</a></p>
+        </div>
+      </div>
     </div>
   );
 }

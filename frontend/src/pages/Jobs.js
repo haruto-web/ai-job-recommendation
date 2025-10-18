@@ -164,7 +164,7 @@ function Jobs() {
             </div>
             {user.profile && user.profile.resume_url && (
               <div className="resume-list">
-                <p>Current Resume: <a href={`${API_URL}/storage/${user.profile.resume_url}`} target="_blank" rel="noopener noreferrer">View Resume</a></p>
+                <p>Current Resume: <a href={`http://localhost:8000/storage/${user.profile.resume_url}`} target="_blank" rel="noopener noreferrer">View Resume</a></p>
                 <button onClick={handleDeleteResume} className="delete-btn">Delete Resume</button>
               </div>
             )}
