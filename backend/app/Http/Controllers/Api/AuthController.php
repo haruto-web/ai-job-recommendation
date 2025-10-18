@@ -34,7 +34,7 @@ class AuthController extends Controller
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
-                'password' => $request->password,
+                'password' => Hash::make($request->password),
                 'user_type' => $request->user_type,
             ]);
 
@@ -127,24 +127,35 @@ class AuthController extends Controller
 
     public function uploadResume(Request $request)
     {
-        $request->validate([
-            'resume' => 'required|file|mimes:pdf,doc,docx|max:5120', // 5MB max
-        ]);
-
         $user = $request->user();
 
-        // Delete old resume if exists
-        if ($user->profile && $user->profile->resume_url) {
-            Storage::disk('public')->delete($user->profile->resume_url);
-        }
+        if ($request->hasFile('resume')) {
+            // Upload new resume
+            $request->validate([
+                'resume' => 'required|file|mimes:pdf,doc,docx|max:5120', // 5MB max
+            ]);
 
-        $path = $request->file('resume')->store('resumes', 'public');
+            // Delete old resume if exists
+            if ($user->profile && $user->profile->resume_url) {
+                Storage::disk('public')->delete($user->profile->resume_url);
+            }
 
-        // Ensure user has a profile
-        if (!$user->profile) {
-            $user->profile()->create(['resume_url' => $path]);
+            $path = $request->file('resume')->store('resumes', 'public');
+
+            // Ensure user has a profile
+            if (!$user->profile) {
+                $user->profile()->create(['resume_url' => $path]);
+            } else {
+                $user->profile->update(['resume_url' => $path]);
+            }
+        } elseif ($request->input('resume') === null) {
+            // Delete resume
+            if ($user->profile && $user->profile->resume_url) {
+                Storage::disk('public')->delete($user->profile->resume_url);
+                $user->profile->update(['resume_url' => null]);
+            }
         } else {
-            $user->profile->update(['resume_url' => $path]);
+            return response()->json(['error' => 'Invalid request'], 400);
         }
 
         return response()->json($user->load('profile'));

@@ -52,7 +52,11 @@ function Jobs() {
       alert('Application submitted successfully!');
     } catch (error) {
       console.error('Failed to apply:', error);
-      alert('Failed to apply for the job. Please try again.');
+      if (error.response && error.response.status === 409) {
+        alert('You have already applied for this job.');
+      } else {
+        alert('Failed to apply for the job. Please try again.');
+      }
     } finally {
       setApplying(null);
     }

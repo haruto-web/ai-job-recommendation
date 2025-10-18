@@ -8,10 +8,14 @@
 - ✅ Fixed 422 Unprocessable Content error for profile image uploads by changing PUT to POST method in both backend routes and frontend API calls.
 - ✅ Added null safety check for user.name in Account.js to prevent runtime errors.
 - ✅ Added auto-refresh functionality after profile image upload to immediately display the updated image.
+- ✅ Added a error handling in applying jobs(the user cant apply to a job that already apply).
+- ✅ fix error in submitting resume(Check the issue).
+
 
 ### Issues:
- - having problem in submitting the resume in the database need to be fix.
  - need to change database usage. now in sqllite to change in mysql. not prio. 
+ - need to create a area in Jobs where the user can interact in the uploaded resume(edit, delete, change)
+
 
 ## Roadmap Overview
 This simplified roadmap focuses on core features: Job Applications/Hiring and Simple AI Recommendations. No payments or external jobs to keep it easy. Total estimated time: 2-3 weeks. Start with Phase 1.
