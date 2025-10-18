@@ -15,7 +15,7 @@ function Account({ isLoggedIn }) {
       const fetchUser = async () => {
         try {
           const token = localStorage.getItem('token');
-          const response = await axios.get(`${API_URL}/user`, {
+          const response = await axios.get(`${API_URL}/user?t=${Date.now()}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           setUser(response.data);
@@ -68,6 +68,8 @@ function Account({ isLoggedIn }) {
       alert('Failed to upload profile image. Please try again.');
     }
   };
+
+
 
   if (loading) {
     return <div>Loading profile...</div>;
@@ -185,7 +187,23 @@ function Account({ isLoggedIn }) {
                     )}
                     {user.profile.experience_level && <p><strong>Experience Level:</strong> {user.profile.experience_level}</p>}
                     {user.profile.portfolio_url && <p><strong>Portfolio:</strong> <a href={user.profile.portfolio_url} target="_blank" rel="noopener noreferrer">{user.profile.portfolio_url}</a></p>}
-                    {user.profile.resume_url && <p><strong>Resume:</strong> <a href={user.profile.resume_url} target="_blank" rel="noopener noreferrer">{user.profile.resume_url}</a></p>}
+                    <div>
+                      <strong>Resumes:</strong>
+                      {user.profile.resumes && user.profile.resumes.length > 0 ? (
+                        <div style={{ marginTop: '15px' }}>
+                          {user.profile.resumes.map((resume, index) => (
+                            <div key={index} style={{ marginBottom: '10px', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
+                              <span>{resume.name}</span>
+                              <div style={{ marginTop: '5px' }}>
+                                <a href={`${API_URL}/storage/${resume.url}`} target="_blank" rel="noopener noreferrer">View</a>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p>No resumes uploaded yet. Go to the <a href="/jobs">Jobs</a> page to manage your resumes.</p>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <p>No profile information available. Update your profile to improve job matches.</p>

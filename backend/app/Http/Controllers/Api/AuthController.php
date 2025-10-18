@@ -122,41 +122,81 @@ class AuthController extends Controller
 
     public function user(Request $request)
     {
-        return response()->json($request->user());
+        return response()->json($request->user()->load('profile'));
     }
 
     public function uploadResume(Request $request)
     {
         $user = $request->user();
 
-        if ($request->hasFile('resume')) {
-            // Upload new resume
+        // Ensure user has a profile
+        if (!$user->profile) {
+            $user->profile()->create();
+        }
+
+        $resumes = $user->profile->resumes ?? [];
+
+        if ($request->has('action')) {
+            $action = $request->input('action');
+            $index = $request->input('index');
+
+            if ($action === 'add' && $request->hasFile('resume')) {
+                // Add new resume
+                $request->validate([
+                    'resume' => 'required|file|mimes:pdf,doc,docx|max:5120', // 5MB max
+                    'name' => 'required|string|max:255',
+                ]);
+
+                $path = $request->file('resume')->store('resumes', 'public');
+                $resumes[] = [
+                    'name' => $request->input('name'),
+                    'url' => $path,
+                ];
+            } elseif ($action === 'replace' && isset($index) && isset($resumes[$index]) && $request->hasFile('resume')) {
+                // Replace specific resume
+                $request->validate([
+                    'resume' => 'required|file|mimes:pdf,doc,docx|max:5120', // 5MB max
+                ]);
+
+                // Delete old file
+                Storage::disk('public')->delete($resumes[$index]['url']);
+
+                $path = $request->file('resume')->store('resumes', 'public');
+                $resumes[$index]['url'] = $path;
+            } elseif ($action === 'delete' && isset($index) && isset($resumes[$index])) {
+                // Delete specific resume
+                Storage::disk('public')->delete($resumes[$index]['url']);
+                unset($resumes[$index]);
+                $resumes = array_values($resumes); // Reindex array
+            } else {
+                return response()->json(['error' => 'Invalid action or parameters'], 400);
+            }
+        } elseif ($request->hasFile('resume')) {
+            // Legacy: Upload single resume (for backward compatibility)
             $request->validate([
                 'resume' => 'required|file|mimes:pdf,doc,docx|max:5120', // 5MB max
             ]);
 
             // Delete old resume if exists
-            if ($user->profile && $user->profile->resume_url) {
+            if ($user->profile->resume_url) {
                 Storage::disk('public')->delete($user->profile->resume_url);
             }
 
             $path = $request->file('resume')->store('resumes', 'public');
-
-            // Ensure user has a profile
-            if (!$user->profile) {
-                $user->profile()->create(['resume_url' => $path]);
-            } else {
-                $user->profile->update(['resume_url' => $path]);
-            }
+            $user->profile->update(['resume_url' => $path]);
+            return response()->json($user->load('profile'));
         } elseif ($request->input('resume') === null) {
-            // Delete resume
-            if ($user->profile && $user->profile->resume_url) {
+            // Legacy: Delete single resume
+            if ($user->profile->resume_url) {
                 Storage::disk('public')->delete($user->profile->resume_url);
                 $user->profile->update(['resume_url' => null]);
             }
+            return response()->json($user->load('profile'));
         } else {
             return response()->json(['error' => 'Invalid request'], 400);
         }
+
+        $user->profile->update(['resumes' => $resumes]);
 
         return response()->json($user->load('profile'));
     }

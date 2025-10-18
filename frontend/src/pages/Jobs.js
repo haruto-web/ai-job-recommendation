@@ -12,6 +12,9 @@ function Jobs() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
 
+  const [replacingIndex, setReplacingIndex] = useState(null);
+  const [replacingFile, setReplacingFile] = useState(null);
+
   useEffect(() => {
     const fetchJobs = async () => {
       try {
@@ -62,7 +65,7 @@ function Jobs() {
     }
   };
 
-  const handleResumeUpload = async () => {
+  const handleAddResume = async () => {
     if (!selectedFile) return;
 
     setUploading(true);
@@ -70,6 +73,7 @@ function Jobs() {
       const token = localStorage.getItem('token');
       const formData = new FormData();
       formData.append('resume', selectedFile);
+      formData.append('action', 'add');
 
       const response = await axios.put(`${API_URL}/user/resume`, formData, {
         headers: {
@@ -79,20 +83,54 @@ function Jobs() {
       });
       setUser(response.data);
       setSelectedFile(null);
-      alert('Resume uploaded successfully!');
+      alert('Resume added successfully!');
+      // Redirect to Account page after successful upload
+      window.location.href = '/account';
     } catch (error) {
-      console.error('Failed to upload resume:', error);
-      alert('Failed to upload resume. Please try again.');
+      console.error('Failed to add resume:', error);
+      alert('Failed to add resume. Please try again.');
     } finally {
       setUploading(false);
     }
   };
 
-  const handleDeleteResume = async () => {
+
+
+  const handleReplaceResume = async (index) => {
+    if (!replacingFile) return;
+
+    setUploading(true);
     try {
       const token = localStorage.getItem('token');
       const formData = new FormData();
-      formData.append('resume', null); // Send null to delete
+      formData.append('action', 'replace');
+      formData.append('index', index);
+      formData.append('resume', replacingFile);
+
+      const response = await axios.put(`${API_URL}/user/resume`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      setUser(response.data);
+      setReplacingIndex(null);
+      setReplacingFile(null);
+      alert('Resume replaced successfully!');
+    } catch (error) {
+      console.error('Failed to replace resume:', error);
+      alert('Failed to replace resume. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteResume = async (index) => {
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('action', 'delete');
+      formData.append('index', index);
 
       const response = await axios.put(`${API_URL}/user/resume`, formData, {
         headers: {
@@ -107,6 +145,8 @@ function Jobs() {
       alert('Failed to delete resume. Please try again.');
     }
   };
+
+
 
   if (loading) {
     return <div>Loading jobs...</div>;
@@ -146,8 +186,10 @@ function Jobs() {
 
         {user && user.user_type === 'jobseeker' && (
           <div className="jobs-section">
-            <h2>Manage Your Resume</h2>
-            <p>Upload your resume to improve job matches and apply to jobs.</p>
+            <h2>Manage Your Resumes</h2>
+            <p>Upload and manage multiple resumes to improve job matches and apply to jobs.</p>
+
+            {/* Add New Resume */}
             <div className="resume-upload">
               <input
                 type="file"
@@ -155,17 +197,50 @@ function Jobs() {
                 onChange={(e) => setSelectedFile(e.target.files[0])}
               />
               <button
-                onClick={handleResumeUpload}
+                onClick={handleAddResume}
                 disabled={!selectedFile || uploading}
                 className="upload-btn"
               >
-                {uploading ? 'Uploading...' : 'Upload Resume'}
+                {uploading ? 'Adding...' : 'Add Resume'}
               </button>
+
+              {/* List of Resumes */}
+              {user.profile && user.profile.resumes && user.profile.resumes.length > 0 && (
+                <div className="resume-list">
+                  <h3>Your Resumes</h3>
+                  {user.profile.resumes.map((resume, index) => (
+                    <div key={index} className="resume-item">
+                      <span>{resume.name}</span>
+                      <div className="resume-actions">
+                        <a href={`${API_URL}/storage/${resume.url}`} target="_blank" rel="noopener noreferrer">View</a>
+                        {replacingIndex === index ? (
+                          <div>
+                            <input
+                              type="file"
+                              accept=".pdf,.doc,.docx"
+                              onChange={(e) => setReplacingFile(e.target.files[0])}
+                            />
+                            <button onClick={() => handleReplaceResume(index)} disabled={!replacingFile || uploading}>
+                              {uploading ? 'Changing...' : 'Change Resume'}
+                            </button>
+                            <button onClick={() => setReplacingIndex(null)}>Cancel</button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setReplacingIndex(index)}>Change Resume</button>
+                        )}
+                        <button onClick={() => handleDeleteResume(index)} className="delete-btn">Delete</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            {user.profile && user.profile.resume_url && (
+
+            {/* Legacy Single Resume Support */}
+            {user.profile && user.profile.resume_url && (!user.profile.resumes || user.profile.resumes.length === 0) && (
               <div className="resume-list">
-                <p>Current Resume: <a href={`http://localhost:8000/storage/${user.profile.resume_url}`} target="_blank" rel="noopener noreferrer">View Resume</a></p>
-                <button onClick={handleDeleteResume} className="delete-btn">Delete Resume</button>
+                <p>Current Resume: <a href={`${API_URL}/storage/${user.profile.resume_url}`} target="_blank" rel="noopener noreferrer">View Resume</a></p>
+                <button onClick={() => handleDeleteResume()} className="delete-btn">Delete Resume</button>
               </div>
             )}
           </div>

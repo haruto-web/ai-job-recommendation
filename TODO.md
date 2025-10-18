@@ -10,15 +10,15 @@
 - ✅ Added auto-refresh functionality after profile image upload to immediately display the updated image.
 - ✅ Added a error handling in applying jobs(the user cant apply to a job that already apply).
 - ✅ fix error in submitting resume(Check the issue).
+- ✅ Added resume management area in Jobs page for job seekers: Upload multiple resumes, , replace, delete, and view them.
+- ✅ Updated backend AuthController to support multiple resumes with actions: add, , replace, delete.
+- ✅ Updated UserProfile model to cast resumes as array.
+- ✅ Ran migration to add resumes column to user_profiles table.
 
 
 ### Issues:
- - need to change database usage. now in sqllite to change in mysql. not prio. 
- - need to create a area in Jobs where the user can interact in the uploaded resume(edit, delete, change)
+ - need to change database usage. now in sqllite to change in mysql. not prio.
 
-
-## Roadmap Overview
-This simplified roadmap focuses on core features: Job Applications/Hiring and Simple AI Recommendations. No payments or external jobs to keep it easy. Total estimated time: 2-3 weeks. Start with Phase 1.
 
 ---
 
@@ -36,7 +36,7 @@ This simplified roadmap focuses on core features: Job Applications/Hiring and Si
 
 ---
 
-## Phase 2: Job Apply & Hire System (Week 2) - Depends on Phase 1
+## Phase 2: Job Apply & Hire System (Week 2) - Depends on Phase 2
 **Goal**: Let users apply to jobs and hire each other.
 
 **Tasks**:
@@ -139,3 +139,23 @@ This simplified roadmap focuses on core features: Job Applications/Hiring and Si
 - [x] Phase 2 Done
 - [ ] Phase 3 Done
 - [ ] Phase 4 Done - Site Complete!
+
+## Task: Separate Resume Display and Management
+### Information Gathered
+- Account.js: Currently displays resumes with view, change, and delete options.
+- Jobs.js: Has full management: add, replace, delete, view.
+- Task: Account page should show resumes under "Your Background" with view links only. Jobs page keeps full management.
+
+### Plan
+- Edit Account.js: Remove change and delete buttons from resume display, keep view links.
+- No changes to Jobs.js as it already has full management.
+- Backend remains unchanged.
+
+### Dependent Files to Edit
+- frontend/src/pages/Account.js: Remove replace and delete functionality.
+
+### Followup Steps
+- Test Account page: Resumes shown with view only.
+- Test Jobs page: Full management still works.
+- Update TODO.md to mark this task as done.
+- [x] Task completed: Removed change and delete buttons from Account.js resume display.
