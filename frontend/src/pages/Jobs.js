@@ -10,6 +10,7 @@ function Jobs() {
   const [applying, setApplying] = useState(null);
   const [user, setUser] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [resumeName, setResumeName] = useState('');
   const [uploading, setUploading] = useState(false);
 
   const [replacingIndex, setReplacingIndex] = useState(null);
@@ -66,13 +67,14 @@ function Jobs() {
   };
 
   const handleAddResume = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !resumeName.trim()) return;
 
     setUploading(true);
     try {
       const token = localStorage.getItem('token');
       const formData = new FormData();
       formData.append('resume', selectedFile);
+      formData.append('name', resumeName.trim());
       formData.append('action', 'add');
 
       const response = await axios.put(`${API_URL}/user/resume`, formData, {
@@ -83,6 +85,7 @@ function Jobs() {
       });
       setUser(response.data);
       setSelectedFile(null);
+      setResumeName('');
       alert('Resume added successfully!');
       // Redirect to Account page after successful upload
       window.location.href = '/account';
@@ -192,13 +195,19 @@ function Jobs() {
             {/* Add New Resume */}
             <div className="resume-upload">
               <input
+                type="text"
+                placeholder="Resume Name"
+                value={resumeName}
+                onChange={(e) => setResumeName(e.target.value)}
+              />
+              <input
                 type="file"
                 accept=".pdf,.doc,.docx"
                 onChange={(e) => setSelectedFile(e.target.files[0])}
               />
               <button
                 onClick={handleAddResume}
-                disabled={!selectedFile || uploading}
+                disabled={!selectedFile || !resumeName.trim() || uploading}
                 className="upload-btn"
               >
                 {uploading ? 'Adding...' : 'Add Resume'}

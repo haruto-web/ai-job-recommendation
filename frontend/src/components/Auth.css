@@ -5,16 +5,16 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
+  /* padding: 20px; */
 }
 
 .auth-card {
   background: white;
   border-radius: 16px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  padding: 40px;
+  padding: 50px;
   width: 100%;
-  max-width: 450px;
+  max-width: 650px;
   position: relative;
   overflow: hidden;
 }

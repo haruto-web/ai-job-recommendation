@@ -1,3 +1,10 @@
+# TODO: Switch Database to MySQL
+
+- [x] Edit backend/.env to set DB_CONNECTION=mysql and uncomment MySQL settings
+- [x] Clear Laravel config cache
+- [x] Run fresh migrations to set up database in MySQL
+- [x] Verify database connection
+
 ## Current Status (What's Working) - You Are Here
 - ✅ User accounts with login/signup
 - ✅ Job seekers and employers (user types)
@@ -14,11 +21,6 @@
 - ✅ Updated backend AuthController to support multiple resumes with actions: add, , replace, delete.
 - ✅ Updated UserProfile model to cast resumes as array.
 - ✅ Ran migration to add resumes column to user_profiles table.
-
-
-### Issues:
- - need to change database usage. now in sqllite to change in mysql. not prio.
-
 
 ---
 
