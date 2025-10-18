@@ -1,7 +1,31 @@
+# TODO: Fix Undefined Method 'createToken'
 
+## Steps to Complete
+- [x] Clear Laravel caches (config, cache, route, view) to resolve potential caching issues with the HasApiTokens trait
+- [x] Test the authentication endpoints (register and login) to verify createToken method works
+- [x] If error persists, check for any missing imports or trait usage in User model (though already present) - Error did not persist after cache clear
+
+## Progress Tracking
+- Started: [Date/Time]
+- Completed: [Date/Time]
+
+# TODO: Fix PHP Diagnostics Issues
+
+## AuthController.php Fixes
+- [x] Add PHPDoc type hint /** @var User $user */ before $user->createToken in register method
+- [x] Change $request->email to $request->input('email') in register method (line 41)
+- [x] Change $user->profile_image to $user->getAttribute('profile_image') in uploadProfileImage method (lines 111, 112, 117)
+
+## JobController.php Fixes
+- [x] Replace Response::HTTP_NOT_FOUND with 404 in show method (line 24)
+- [x] Replace Response::HTTP_NOT_FOUND with 404 in update method (line 45)
+- [x] Replace Response::HTTP_FORBIDDEN with 403 in store method (line 50)
+- [x] Replace Response::HTTP_FORBIDDEN with 403 in update method (line 57)
+- [x] Replace Response::HTTP_CREATED with 201 in store method (line 64)
+- [x] Replace Response::HTTP_NOT_FOUND with 404 in destroy method (line 85)
+- [x] Replace Response::HTTP_FORBIDDEN with 403 in destroy method (line 92)
 
 # TODO: Switch Database to MySQL
-
 - [x] Edit backend/.env to set DB_CONNECTION=mysql and uncomment MySQL settings
 - [x] Clear Laravel config cache
 - [x] Run fresh migrations to set up database in MySQL
@@ -167,4 +191,5 @@
 - Test Jobs page: Full management still works.
 - Update TODO.md to mark this task as done.
 - [x] Task completed: Removed change and delete buttons from Account.js resume display.
+
 

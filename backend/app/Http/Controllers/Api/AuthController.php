@@ -38,8 +38,9 @@ class AuthController extends Controller
                 'user_type' => $request->user_type,
             ]);
 
-            Log::info('User created successfully', ['user_id' => $user->id, 'email' => $user->email]);
+            Log::info('User created successfully', ['user_id' => $user->id, 'email' => $request->input('email')]);
 
+            /** @var \App\Models\User $user */
             $token = $user->createToken('API Token')->plainTextToken;
 
             Log::info('Token generated for user', ['user_id' => $user->id]);
@@ -108,13 +109,13 @@ class AuthController extends Controller
         $user = $request->user();
 
         // Delete old image if exists
-        if ($user->profile_image) {
-            Storage::disk('public')->delete($user->profile_image);
+        if ($user->getAttribute('profile_image')) {
+            Storage::disk('public')->delete($user->getAttribute('profile_image'));
         }
 
         $path = $request->file('profile_image')->store('avatars', 'public');
 
-        $user->profile_image = $path;
+        $user->setAttribute('profile_image', $path);
         $user->save();
 
         return response()->json($user);
