@@ -19,7 +19,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('user', [AuthController::class, 'updateUser']);
     Route::put('user/profile', [AuthController::class, 'updateProfile']);
     Route::post('user/profile-image', [AuthController::class, 'uploadProfileImage']);
-    Route::put('user/resume', [AuthController::class, 'uploadResume']);
+    Route::post('user/resume', [AuthController::class, 'uploadResume']);
     Route::post('jobs', [JobController::class, 'store']);
     Route::put('jobs/{id}', [JobController::class, 'update']);
     Route::delete('jobs/{id}', [JobController::class, 'destroy']);

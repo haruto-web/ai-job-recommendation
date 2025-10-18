@@ -1,3 +1,25 @@
+# TODO: Fix Code Duplication in AuthController uploadResume Method
+
+- [x] Add private method `extractAndMergeSkills($path, $profile)` to handle skill extraction and merging.
+- [x] Replace duplicated skill extraction code in 'add' action with call to `extractAndMergeSkills`.
+- [x] Replace duplicated skill extraction code in 'replace' action with call to `extractAndMergeSkills`.
+- [x] Replace duplicated skill extraction code in legacy upload with call to `extractAndMergeSkills`.
+
+- [x] Integrate resume upload with job matching using OpenAI
+- [x] Ensure uploaded resume is visible on the Jobs page
+- [x] Test the full flow: upload resume -> parse skills -> match jobs -> display on page
+
+# TODO: Add Sections to Jobs.js
+
+## Tasks
+- [ ] Modify Jobs.js to add "All Posted Jobs" section displaying all fetched jobs without match scores.
+- [ ] Add "Matched Jobs for You" section displaying jobs with match_score > 0, only for jobseekers.
+- [ ] Test the Jobs page to ensure both sections render correctly and apply functionality works.
+- [ ] Verify that matched jobs are only shown for users with user_type 'jobseeker'.
+
+
+
+
 # TODO: Fix Undefined Method 'createToken'
 
 ## Steps to Complete
@@ -131,14 +153,14 @@
 **Goal**: Basic job matching based on user skills and resume analysis.
 
 **Tasks**:
-- [ ] Install OpenAI for simple matching
-- [ ] Profile forms for skills (text input)
-- [ ] Add resume upload functionality to user profiles (PDF/DOCX support)
-- [ ] Install PDF/DOCX parsing libraries (smalot/pdfparser, phpoffice/phpword)
-- [ ] AI engine to read and analyze user resumes for skills extraction
-- [ ] AI engine to match jobs to users (keyword-based via OpenAI)
-- [ ] Show "Recommended for You" on jobs page
-- [ ] Match scores (e.g., "70% match")
+- [x] Install OpenAI for simple matching
+- [x] Profile forms for skills (text input)
+- [x] Add resume upload functionality to user profiles (PDF/DOCX support)
+- [x] Install PDF/DOCX parsing libraries (smalot/pdfparser, phpoffice/phpword)
+- [x] AI engine to read and analyze user resumes for skills extraction
+- [x] AI engine to match jobs to users (keyword-based via OpenAI)
+- [x] Show "Recommended for You" on jobs page
+- [x] Match scores (e.g., "70% match")
 
 **Dependencies**: Phase 2 complete, OpenAI API key
 **Next**: Phase 4

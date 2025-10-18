@@ -8,12 +8,31 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Services\OpenAIService;
 
 class JobController extends Controller
 {
     public function index()
     {
         $jobs = Job::all();
+
+        $user = Auth::user();
+        if ($user && $user->user_type === 'jobseeker' && $user->profile) {
+            $openai = new OpenAIService();
+            $userSkills = $user->profile->skills ?? [];
+            $userExperience = $user->profile->experience_level ?? 'entry';
+
+            foreach ($jobs as $job) {
+                $jobDescription = $job->title . ' ' . $job->description . ' ' . implode(' ', $job->requirements ?? []);
+                $match = $openai->matchJobToUser($jobDescription, $userSkills, $userExperience);
+                $job->match_score = $match['match_score'] ?? 0;
+                $job->match_reasoning = $match['reasoning'] ?? '';
+            }
+
+            // Sort by match score descending
+            $jobs = $jobs->sortByDesc('match_score')->values();
+        }
+
         return response()->json($jobs);
     }
 

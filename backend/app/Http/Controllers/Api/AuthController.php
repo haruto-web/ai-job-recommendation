@@ -8,8 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Services\ResumeParserService;
+use App\Services\OpenAIService;
 
 
 
@@ -18,8 +19,6 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         try {
-            Log::info('Registration attempt', $request->all());
-
             $request->validate([
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
@@ -38,23 +37,14 @@ class AuthController extends Controller
                 'user_type' => $request->user_type,
             ]);
 
-            Log::info('User created successfully', ['user_id' => $user->id, 'email' => $request->input('email')]);
-
             /** @var \App\Models\User $user */
             $token = $user->createToken('API Token')->plainTextToken;
-
-            Log::info('Token generated for user', ['user_id' => $user->id]);
 
             return response()->json([
                 'user' => $user,
                 'token' => $token,
             ], 201);
         } catch (\Exception $e) {
-            Log::error('Registration failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request_data' => $request->all()
-            ]);
             throw $e;
         }
     }
@@ -138,25 +128,37 @@ class AuthController extends Controller
         $user = $request->user();
 
         // Ensure user has a profile
-        if (!$user->profile) {
-            $user->profile()->create();
-        }
+        $profile = $user->profile ?: $user->profile()->create();
 
-        $user->profile->update($request->only(['bio', 'skills', 'experience_level', 'portfolio_url']));
+        $profile->update($request->only(['bio', 'skills', 'experience_level', 'portfolio_url']));
 
         return response()->json($user->load('profile'));
+    }
+
+    private function extractAndMergeSkills($path, $profile)
+    {
+        try {
+            $parser = new ResumeParserService();
+            $resumeText = $parser->parseResume(storage_path('app/public/' . $path));
+            $openai = new OpenAIService();
+            $extractedSkills = $openai->extractSkillsFromResume($resumeText);
+
+            // Merge with existing skills
+            $existingSkills = $profile->skills ?? [];
+            $mergedSkills = array_unique(array_merge($existingSkills, $extractedSkills));
+            $profile->update(['skills' => $mergedSkills]);
+        } catch (\Exception $e) {
+            // Handle exception silently or log elsewhere if needed
+        }
     }
 
     public function uploadResume(Request $request)
     {
         $user = $request->user();
 
-        // Ensure user has a profile
-        if (!$user->profile) {
-            $user->profile()->create();
-        }
+        $profile = $user->profile ?: $user->profile()->create();
 
-        $resumes = $user->profile->resumes ?? [];
+        $resumes = $profile->resumes ?? [];
 
         if ($request->has('action')) {
             $action = $request->input('action');
@@ -174,6 +176,8 @@ class AuthController extends Controller
                     'name' => $request->input('name'),
                     'url' => $path,
                 ];
+
+                $this->extractAndMergeSkills($path, $profile);
             } elseif ($action === 'replace' && isset($index) && isset($resumes[$index]) && $request->hasFile('resume')) {
                 // Replace specific resume
                 $request->validate([
@@ -185,6 +189,8 @@ class AuthController extends Controller
 
                 $path = $request->file('resume')->store('resumes', 'public');
                 $resumes[$index]['url'] = $path;
+
+                $this->extractAndMergeSkills($path, $profile);
             } elseif ($action === 'delete' && isset($index) && isset($resumes[$index])) {
                 // Delete specific resume
                 Storage::disk('public')->delete($resumes[$index]['url']);
@@ -200,25 +206,28 @@ class AuthController extends Controller
             ]);
 
             // Delete old resume if exists
-            if ($user->profile->resume_url) {
-                Storage::disk('public')->delete($user->profile->resume_url);
+            if ($profile->resume_url) {
+                Storage::disk('public')->delete($profile->resume_url);
             }
 
             $path = $request->file('resume')->store('resumes', 'public');
-            $user->profile->update(['resume_url' => $path]);
+            $profile->update(['resume_url' => $path]);
+
+            $this->extractAndMergeSkills($path, $profile);
+
             return response()->json($user->load('profile'));
         } elseif ($request->input('resume') === null) {
             // Legacy: Delete single resume
-            if ($user->profile->resume_url) {
-                Storage::disk('public')->delete($user->profile->resume_url);
-                $user->profile->update(['resume_url' => null]);
+            if ($profile->resume_url) {
+                Storage::disk('public')->delete($profile->resume_url);
+                $profile->update(['resume_url' => null]);
             }
             return response()->json($user->load('profile'));
         } else {
             return response()->json(['error' => 'Invalid request'], 400);
         }
 
-        $user->profile->update(['resumes' => $resumes]);
+        $profile->update(['resumes' => $resumes]);
 
         return response()->json($user->load('profile'));
     }

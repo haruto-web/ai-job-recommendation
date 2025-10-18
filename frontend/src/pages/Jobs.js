@@ -77,10 +77,9 @@ function Jobs() {
       formData.append('name', resumeName.trim());
       formData.append('action', 'add');
 
-      const response = await axios.put(`${API_URL}/user/resume`, formData, {
+      const response = await axios.post(`${API_URL}/user/resume`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
         },
       });
       setUser(response.data);
@@ -110,10 +109,9 @@ function Jobs() {
       formData.append('index', index);
       formData.append('resume', replacingFile);
 
-      const response = await axios.put(`${API_URL}/user/resume`, formData, {
+      const response = await axios.post(`${API_URL}/user/resume`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
         },
       });
       setUser(response.data);
@@ -135,10 +133,9 @@ function Jobs() {
       formData.append('action', 'delete');
       formData.append('index', index);
 
-      const response = await axios.put(`${API_URL}/user/resume`, formData, {
+      const response = await axios.post(`${API_URL}/user/resume`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
         },
       });
       setUser(response.data);
@@ -164,15 +161,14 @@ function Jobs() {
 
       <section className="jobs-content">
         <div className="jobs-section">
-          <h2>Featured Jobs</h2>
-          <p>Our AI analyzes your profile and matches you with the most relevant opportunities in your field.</p>
+          <h2>All Posted Jobs</h2>
+          <p>Browse all available job opportunities.</p>
           <div className="job-cards">
             {jobs.length > 0 ? jobs.map(job => (
               <div key={job.id} className="job-card">
                 <h3>{job.title}</h3>
                 <p>{job.company} - {job.location} - {job.type}</p>
                 {job.salary && <p>Salary: ${job.salary}</p>}
-                <span className="match-score">AI Match</span>
                 <button
                   onClick={() => handleApply(job.id)}
                   disabled={applying === job.id}
@@ -186,6 +182,34 @@ function Jobs() {
             )}
           </div>
         </div>
+
+        {user && user.user_type === 'jobseeker' && (
+          <div className="jobs-section">
+            <h2>Matched Jobs for You</h2>
+            <p>Jobs that match your profile based on our AI analysis.</p>
+            <div className="job-cards">
+              {jobs.filter(job => job.match_score && job.match_score > 0).length > 0 ? jobs.filter(job => job.match_score && job.match_score > 0).map(job => (
+                <div key={job.id} className="job-card">
+                  <h3>{job.title}</h3>
+                  <p>{job.company} - {job.location} - {job.type}</p>
+                  {job.salary && <p>Salary: ${job.salary}</p>}
+                  {job.match_score !== undefined && (
+                    <span className="match-score">{job.match_score}% match</span>
+                  )}
+                  <button
+                    onClick={() => handleApply(job.id)}
+                    disabled={applying === job.id}
+                    className="apply-btn"
+                  >
+                    {applying === job.id ? 'Applying...' : 'Apply'}
+                  </button>
+                </div>
+              )) : (
+                <p>No matched jobs available. Upload a resume to get personalized matches.</p>
+              )}
+            </div>
+          </div>
+        )}
 
         {user && user.user_type === 'jobseeker' && (
           <div className="jobs-section">
