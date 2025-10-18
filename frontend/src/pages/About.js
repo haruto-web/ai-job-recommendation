@@ -43,7 +43,7 @@ function About() {
             <p>Kurt Santos</p>
           </div>
           <div className="team-member">
-            <img src="/ryu.jpg" alt="Joseph Cahindi" />
+            <img src="/jop.jpg" alt="Joseph Cahindi" />
             <p>Joseph Cahindi</p>
           </div>
           <div className="team-member">

@@ -86,7 +86,7 @@ function App() {
   return (
     <Router>
       <Navigation isLoggedIn={isLoggedIn} onLogin={handleLogin} onRegister={handleRegister} onLogout={handleLogout} />
-      <div style={{ marginTop: '20px' }}>
+      <div style={{ marginTop: '0' }}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />

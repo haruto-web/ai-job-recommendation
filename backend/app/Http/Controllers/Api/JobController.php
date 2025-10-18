@@ -21,7 +21,7 @@ class JobController extends Controller
     {
         $job = Job::find($id);
         if (!$job) {
-            return response()->json(['message' => 'Job not found'], Response::HTTP_NOT_FOUND);
+            return response()->json(['message' => 'Job not found'], 404);
         }
         return response()->json($job);
     }
@@ -42,26 +42,26 @@ class JobController extends Controller
 
         // Only employers can create jobs
         if ($user->user_type !== 'employer') {
-            return response()->json(['message' => 'Only employers can create jobs'], Response::HTTP_FORBIDDEN);
+            return response()->json(['message' => 'Only employers can create jobs'], 403);
         }
 
         $job = Job::create(array_merge($validated, ['user_id' => $user->id]));
 
-        return response()->json($job, Response::HTTP_CREATED);
+        return response()->json($job, 201);
     }
 
     public function update(Request $request, $id)
     {
         $job = Job::find($id);
         if (!$job) {
-            return response()->json(['message' => 'Job not found'], Response::HTTP_NOT_FOUND);
+            return response()->json(['message' => 'Job not found'], 404);
         }
 
         $user = Auth::user();
 
         // Only the job owner can update the job
         if ($job->user_id !== $user->id) {
-            return response()->json(['message' => 'You can only update your own jobs'], Response::HTTP_FORBIDDEN);
+            return response()->json(['message' => 'You can only update your own jobs'], 403);
         }
 
         $validated = $request->validate([
@@ -82,14 +82,14 @@ class JobController extends Controller
     {
         $job = Job::find($id);
         if (!$job) {
-            return response()->json(['message' => 'Job not found'], Response::HTTP_NOT_FOUND);
+            return response()->json(['message' => 'Job not found'], 404);
         }
 
         $user = Auth::user();
 
         // Only the job owner can delete the job
         if ($job->user_id !== $user->id) {
-            return response()->json(['message' => 'You can only delete your own jobs'], Response::HTTP_FORBIDDEN);
+            return response()->json(['message' => 'You can only delete your own jobs'], 403);
         }
 
         $job->delete();
