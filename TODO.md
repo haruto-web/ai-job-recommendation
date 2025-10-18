@@ -1,3 +1,5 @@
+
+
 # TODO: Switch Database to MySQL
 
 - [x] Edit backend/.env to set DB_CONNECTION=mysql and uncomment MySQL settings
@@ -21,6 +23,10 @@
 - ✅ Updated backend AuthController to support multiple resumes with actions: add, , replace, delete.
 - ✅ Updated UserProfile model to cast resumes as array.
 - ✅ Ran migration to add resumes column to user_profiles table.
+
+
+- [x] Add profile editing form in Account.js for job seekers (bio, skills, experience_level)
+- [x] Update backend to handle profile updates
 
 ---
 
@@ -161,3 +167,4 @@
 - Test Jobs page: Full management still works.
 - Update TODO.md to mark this task as done.
 - [x] Task completed: Removed change and delete buttons from Account.js resume display.
+

@@ -125,6 +125,27 @@ class AuthController extends Controller
         return response()->json($request->user()->load('profile'));
     }
 
+    public function updateProfile(Request $request)
+    {
+        $request->validate([
+            'bio' => 'nullable|string|max:1000',
+            'skills' => 'nullable|array',
+            'experience_level' => 'nullable|in:entry,mid,senior,expert',
+            'portfolio_url' => 'nullable|url',
+        ]);
+
+        $user = $request->user();
+
+        // Ensure user has a profile
+        if (!$user->profile) {
+            $user->profile()->create();
+        }
+
+        $user->profile->update($request->only(['bio', 'skills', 'experience_level', 'portfolio_url']));
+
+        return response()->json($user->load('profile'));
+    }
+
     public function uploadResume(Request $request)
     {
         $user = $request->user();

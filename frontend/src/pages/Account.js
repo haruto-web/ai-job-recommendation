@@ -9,6 +9,13 @@ function Account({ isLoggedIn }) {
   const [loading, setLoading] = useState(true);
   const [userType, setUserType] = useState('jobseeker');
   const [selectedFile, setSelectedFile] = useState(null);
+  const [profileData, setProfileData] = useState({
+    bio: '',
+    skills: [],
+    experience_level: '',
+    portfolio_url: ''
+  });
+  const [editingProfile, setEditingProfile] = useState(false);
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -20,6 +27,14 @@ function Account({ isLoggedIn }) {
           });
           setUser(response.data);
           setUserType(response.data.user_type);
+          if (response.data.profile) {
+            setProfileData({
+              bio: response.data.profile.bio || '',
+              skills: response.data.profile.skills || [],
+              experience_level: response.data.profile.experience_level || '',
+              portfolio_url: response.data.profile.portfolio_url || ''
+            });
+          }
         } catch (error) {
           console.error('Failed to fetch user:', error);
         } finally {
@@ -66,6 +81,21 @@ function Account({ isLoggedIn }) {
     } catch (error) {
       console.error('Failed to upload image:', error);
       alert('Failed to upload profile image. Please try again.');
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${API_URL}/user/profile`, profileData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUser({ ...user, profile: profileData });
+      setEditingProfile(false);
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      alert('Failed to update profile. Please try again.');
     }
   };
 
@@ -179,34 +209,78 @@ function Account({ isLoggedIn }) {
               <p>View your applications and earnings in the <a href="/dashboard">Dashboard</a>.</p>
               <div className="user-background">
                 <h4>Your Background</h4>
-                {user.profile ? (
-                  <div>
-                    {user.profile.bio && <p><strong>Bio:</strong> {user.profile.bio}</p>}
-                    {user.profile.skills && user.profile.skills.length > 0 && (
-                      <p><strong>Skills:</strong> {user.profile.skills.join(', ')}</p>
-                    )}
-                    {user.profile.experience_level && <p><strong>Experience Level:</strong> {user.profile.experience_level}</p>}
-                    {user.profile.portfolio_url && <p><strong>Portfolio:</strong> <a href={user.profile.portfolio_url} target="_blank" rel="noopener noreferrer">{user.profile.portfolio_url}</a></p>}
-                    <div>
-                      <strong>Resumes:</strong>
-                      {user.profile.resumes && user.profile.resumes.length > 0 ? (
-                        <div style={{ marginTop: '15px' }}>
-                          {user.profile.resumes.map((resume, index) => (
-                            <div key={index} style={{ marginBottom: '10px', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
-                              <span>{resume.name}</span>
-                              <div style={{ marginTop: '5px' }}>
-                                <a href={`${API_URL}/storage/${resume.url}`} target="_blank" rel="noopener noreferrer">View</a>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p>No resumes uploaded yet. Go to the <a href="/jobs">Jobs</a> page to manage your resumes.</p>
-                      )}
+                {editingProfile ? (
+                  <div className="edit-profile-form">
+                    <label>Bio:</label>
+                    <textarea
+                      value={profileData.bio}
+                      onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                      placeholder="Tell us about yourself..."
+                      rows="4"
+                    />
+                    <label>Skills (comma-separated):</label>
+                    <input
+                      type="text"
+                      value={profileData.skills.join(', ')}
+                      onChange={(e) => setProfileData({ ...profileData, skills: e.target.value.split(',').map(s => s.trim()) })}
+                      placeholder="e.g., JavaScript, React, Node.js"
+                    />
+                    <label>Experience Level:</label>
+                    <select
+                      value={profileData.experience_level}
+                      onChange={(e) => setProfileData({ ...profileData, experience_level: e.target.value })}
+                    >
+                      <option value="">Select experience level</option>
+                      <option value="entry">Entry Level</option>
+                      <option value="mid">Mid Level</option>
+                      <option value="senior">Senior Level</option>
+                      <option value="expert">Expert</option>
+                    </select>
+                    <label>Portfolio URL:</label>
+                    <input
+                      type="url"
+                      value={profileData.portfolio_url}
+                      onChange={(e) => setProfileData({ ...profileData, portfolio_url: e.target.value })}
+                      placeholder="https://yourportfolio.com"
+                    />
+                    <div className="form-buttons">
+                      <button onClick={handleSaveProfile} className="save-btn">Save</button>
+                      <button onClick={() => setEditingProfile(false)} className="cancel-btn">Cancel</button>
                     </div>
                   </div>
                 ) : (
-                  <p>No profile information available. Update your profile to improve job matches.</p>
+                  <div>
+                    {user.profile ? (
+                      <div>
+                        {user.profile.bio && <p><strong>Bio:</strong> {user.profile.bio}</p>}
+                        {user.profile.skills && user.profile.skills.length > 0 && (
+                          <p><strong>Skills:</strong> {user.profile.skills.join(', ')}</p>
+                        )}
+                        {user.profile.experience_level && <p><strong>Experience Level:</strong> {user.profile.experience_level}</p>}
+                        {user.profile.portfolio_url && <p><strong>Portfolio:</strong> <a href={user.profile.portfolio_url} target="_blank" rel="noopener noreferrer">{user.profile.portfolio_url}</a></p>}
+                        <div>
+                          <strong>Resumes:</strong>
+                          {user.profile.resumes && user.profile.resumes.length > 0 ? (
+                            <div style={{ marginTop: '15px' }}>
+                              {user.profile.resumes.map((resume, index) => (
+                                <div key={index} style={{ marginBottom: '10px', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
+                                  <span>{resume.name}</span>
+                                  <div style={{ marginTop: '5px' }}>
+                                    <a href={`${API_URL}/storage/${resume.url}`} target="_blank" rel="noopener noreferrer">View</a>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p>No resumes uploaded yet. Go to the <a href="/jobs">Jobs</a> page to manage your resumes.</p>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <p>No profile information available. Update your profile to improve job matches.</p>
+                    )}
+                    <button onClick={() => setEditingProfile(true)} className="edit-profile-btn">Edit Profile</button>
+                  </div>
                 )}
               </div>
             </div>
