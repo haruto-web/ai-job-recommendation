@@ -97,7 +97,7 @@ function Account({ isLoggedIn }) {
             <div className="profile-avatar">
               {user.profile_image ? (
                 <img 
-                  src={`${API_URL.replace('/api', '')}/storage/${user.profile_image}`} 
+                  src={`http://localhost:8000/storage/${user.profile_image}`} 
                   alt="Profile" 
                   style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} 
                 />
