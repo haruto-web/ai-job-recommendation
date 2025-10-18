@@ -1,4 +1,4 @@
-Your website is an AI-powered job recommendation platform designed to connect job seekers with employers through intelligent matching. It's built as a full-stack application with a React frontend and a Laravel backend API. Here's a comprehensive explanation of how it works:
+
 
 Architecture Overview
 Frontend (React):
