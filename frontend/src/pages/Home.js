@@ -23,7 +23,7 @@ function Home() {
             </p>
             <div className="hero-actions">
               <Link to="/register" className="btn-primary">
-                Get Started Free
+                Get Started
               </Link>
               <Link to="/about" className="btn-secondary">
                 Learn More
