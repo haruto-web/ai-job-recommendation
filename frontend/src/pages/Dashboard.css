@@ -520,3 +520,142 @@
   background-color: #dc2626;
   transform: translateY(-1px);
 }
+
+/* Floating Chat Widget */
+.ai-chat-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg,#6a11cb 0%,#2575fc 100%);
+  box-shadow: 0 6px 18px rgba(37,117,252,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+.ai-chat-panel {
+  position: fixed;
+  right: 24px;
+  bottom: 92px;
+  width: 360px;
+  max-height: 520px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ai-chat-header {
+  padding: 12px 16px;
+  background: linear-gradient(90deg,#6a11cb 0%,#2575fc 100%);
+  color: white;
+  font-weight: 600;
+}
+
+.ai-chat-messages {
+  padding: 12px;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  background: #f8fafc;
+}
+
+.ai-chat-input {
+  padding: 10px;
+  border-top: 1px solid #eee;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ai-msg {
+  margin-bottom: 10px;
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: 12px;
+}
+
+.ai-msg.user {
+  background: #2563eb;
+  color: white;
+  margin-left: auto;
+}
+
+.ai-msg.bot {
+  background: white;
+  color: #111827;
+  border: 1px solid #e6eef8;
+}
+
+.ai-send-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.ai-input-field {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.ai-suggestions {
+  padding: 12px;
+  border-top: 1px solid #eef2ff;
+  background: #ffffff;
+}
+
+.suggestion-card {
+  padding: 10px;
+  border: 1px solid #eef2ff;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  background: #fbfdff;
+}
+
+.suggestion-desc {
+  margin: 6px 0;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.suggestion-meta {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.suggestion-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.apply-btn, .view-btn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.apply-btn {
+  background: #10b981;
+  color: white;
+}
+
+.view-btn {
+  background: #e6eef8;
+  color: #1f2937;
+}

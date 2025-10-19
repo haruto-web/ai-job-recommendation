@@ -19,6 +19,26 @@ function Dashboard() {
     requirements: []
   });
   const [creatingJob, setCreatingJob] = useState(false);
+  const [payoutForm, setPayoutForm] = useState({ applicationId: null, amount: '', description: '' });
+  const [showPayoutForm, setShowPayoutForm] = useState(false);
+  const [processingPayout, setProcessingPayout] = useState(false);
+  const [moneyForm, setMoneyForm] = useState({ amount: '', description: '' });
+  const [showMoneyForm, setShowMoneyForm] = useState(false);
+  const [processingMoney, setProcessingMoney] = useState(false);
+  const [moneyAction, setMoneyAction] = useState(''); // 'add' or 'reduce'
+  // Resume management / AI analysis for jobseekers
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [replacingIndex, setReplacingIndex] = useState(null);
+  const [replacingFile, setReplacingFile] = useState(null);
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]); // {role:'user'|'bot', text}
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [applying, setApplying] = useState(null);
 
   const fetchDashboard = async () => {
     try {
@@ -88,6 +108,156 @@ function Dashboard() {
       alert('Failed to create job. Please try again.');
     } finally {
       setCreatingJob(false);
+    }
+  };
+
+  const handlePayout = async (applicationId) => {
+    if (!payoutForm.amount || !payoutForm.description) return;
+
+    setProcessingPayout(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_URL}/payments`, {
+        application_id: applicationId,
+        amount: parseFloat(payoutForm.amount),
+        description: payoutForm.description
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('Payout processed successfully!');
+      setPayoutForm({ applicationId: null, amount: '', description: '' });
+      setShowPayoutForm(false);
+      fetchDashboard(); // Refresh dashboard data
+    } catch (error) {
+      console.error('Failed to process payout:', error);
+      alert('Failed to process payout. Please try again.');
+    } finally {
+      setProcessingPayout(false);
+    }
+  };
+
+  const handleMoneyAction = async () => {
+    if (!moneyForm.amount || !moneyForm.description) return;
+
+    setProcessingMoney(true);
+    try {
+      const token = localStorage.getItem('token');
+      const amount = moneyAction === 'add' ? parseFloat(moneyForm.amount) : -parseFloat(moneyForm.amount);
+      await axios.post(`${API_URL}/manage-money`, {
+        amount: amount,
+        description: moneyForm.description
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert(`${moneyAction === 'add' ? 'Money added' : 'Money reduced'} successfully!`);
+      setMoneyForm({ amount: '', description: '' });
+      setShowMoneyForm(false);
+      setMoneyAction('');
+      fetchDashboard(); // Refresh dashboard data
+    } catch (error) {
+      console.error('Failed to manage money:', error);
+      alert('Failed to manage money. Please try again.');
+    } finally {
+      setProcessingMoney(false);
+    }
+  };
+
+  // Resume / AI handlers
+  const handleAddResume = async () => {
+    if (!selectedFile) return;
+    setUploadingResume(true);
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('resume', selectedFile);
+      formData.append('action', 'add');
+
+      const response = await axios.post(`${API_URL}/user/resume`, formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDashboardData(prev => ({ ...prev, profile: response.data.profile }));
+      setSelectedFile(null);
+      alert('Resume added successfully!');
+    } catch (error) {
+      console.error('Failed to add resume:', error);
+      alert('Failed to add resume. Please try again.');
+    } finally {
+      setUploadingResume(false);
+    }
+  };
+
+  const handleReplaceResume = async (index) => {
+    if (!replacingFile) return;
+    setUploadingResume(true);
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('action', 'replace');
+      formData.append('index', index);
+      formData.append('resume', replacingFile);
+
+      const response = await axios.post(`${API_URL}/user/resume`, formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDashboardData(prev => ({ ...prev, profile: response.data.profile }));
+      setReplacingIndex(null);
+      setReplacingFile(null);
+      alert('Resume replaced successfully!');
+    } catch (error) {
+      console.error('Failed to replace resume:', error);
+      alert('Failed to replace resume. Please try again.');
+    } finally {
+      setUploadingResume(false);
+    }
+  };
+
+  const handleDeleteResume = async (index = null) => {
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('action', 'delete');
+      if (index !== null) formData.append('index', index);
+
+      const response = await axios.post(`${API_URL}/user/resume`, formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDashboardData(prev => ({ ...prev, profile: response.data.profile }));
+      alert('Resume deleted successfully!');
+    } catch (error) {
+      console.error('Failed to delete resume:', error);
+      alert('Failed to delete resume. Please try again.');
+    }
+  };
+
+  const fetchAiAnalysis = async () => {
+    try {
+      setLoadingAnalysis(true);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/user/resume-analysis`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAiAnalysis(response.data);
+    } catch (error) {
+      console.error('Failed to fetch AI analysis:', error);
+      setAiAnalysis(null);
+    } finally {
+      setLoadingAnalysis(false);
+    }
+  };
+
+  const triggerAiAnalysis = async () => {
+    try {
+      setLoadingAnalysis(true);
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_URL}/user/trigger-ai-analysis`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setTimeout(() => fetchAiAnalysis(), 2000);
+    } catch (error) {
+      console.error('Failed to trigger AI analysis:', error);
+      alert('Failed to trigger AI analysis. Please try again.');
+    } finally {
+      setLoadingAnalysis(false);
     }
   };
 
@@ -178,6 +348,55 @@ function Dashboard() {
               ) : (
                 <p>No transactions yet.</p>
               )}
+            </div>
+
+            {/* Resume management & AI analysis for jobseekers */}
+            <div className="dashboard-section">
+              <h2>Manage Your Resumes</h2>
+              <p>Upload and manage multiple resumes to improve job matches and get AI insights.</p>
+
+              <div style={{ marginTop: '10px' }}>
+                <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setSelectedFile(e.target.files[0])} />
+                <button onClick={handleAddResume} disabled={!selectedFile || uploadingResume} className="upload-btn" style={{ marginLeft: '8px' }}>
+                  {uploadingResume ? 'Adding...' : 'Add Resume'}
+                </button>
+              </div>
+
+              {dashboardData.profile && dashboardData.profile.resumes && dashboardData.profile.resumes.length > 0 && (
+                <div style={{ marginTop: '15px' }}>
+                  <h3>Your Resumes</h3>
+                  {dashboardData.profile.resumes.map((resume, index) => (
+                    <div key={index} style={{ marginBottom: '10px', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
+                      <span>{resume.name}</span>
+                      <div style={{ marginTop: '5px' }}>
+                        <a href={`${API_URL}/storage/${resume.url}`} target="_blank" rel="noopener noreferrer">View</a>
+                        {replacingIndex === index ? (
+                          <div>
+                            <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setReplacingFile(e.target.files[0])} />
+                            <button onClick={() => handleReplaceResume(index)} disabled={!replacingFile || uploadingResume}>{uploadingResume ? 'Changing...' : 'Change Resume'}</button>
+                            <button onClick={() => setReplacingIndex(null)}>Cancel</button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setReplacingIndex(index)} style={{ marginLeft: '8px' }}>Change Resume</button>
+                        )}
+                        <button onClick={() => handleDeleteResume(index)} className="delete-btn" style={{ marginLeft: '8px' }}>Delete</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {dashboardData.profile && dashboardData.profile.resume_url && (!dashboardData.profile.resumes || dashboardData.profile.resumes.length === 0) && (
+                <div style={{ marginTop: '10px' }}>
+                  <p>Current Resume: <a href={`${API_URL}/storage/${dashboardData.profile.resume_url}`} target="_blank" rel="noopener noreferrer">View Resume</a></p>
+                  <button onClick={() => handleDeleteResume()} className="delete-btn">Delete Resume</button>
+                </div>
+              )}
+
+              {/* AI Analysis */}
+              <div style={{ marginTop: '20px', padding: '15px', border: '1px solid #007bff', borderRadius: '8px', backgroundColor: '#f8f9fa' }}>
+                <p style={{ marginTop: '8px' }}>Open the chat in the bottom-right to talk to the AI career advisor.</p>
+              </div>
             </div>
           </div>
         ) : (
@@ -388,18 +607,29 @@ function Dashboard() {
                       </div>
 
                       <div className="application-actions">
-                        <button 
-                          className="action-btn accept" 
+                        <button
+                          className="action-btn accept"
                           onClick={() => handleApplicationAction(app.id, 'accepted')}
                         >
                           ✅ Accept
                         </button>
-                        <button 
-                          className="action-btn reject" 
+                        <button
+                          className="action-btn reject"
                           onClick={() => handleApplicationAction(app.id, 'rejected')}
                         >
                           ❌ Reject
                         </button>
+                        {app.status === 'accepted' && (
+                          <button
+                            className="action-btn payout"
+                            onClick={() => {
+                              setPayoutForm({ applicationId: app.id, amount: '', description: '' });
+                              setShowPayoutForm(true);
+                            }}
+                          >
+                            💰 Pay Worker
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -411,7 +641,27 @@ function Dashboard() {
 
             <div className="dashboard-section">
               <h2>Payments & Transactions</h2>
-              <p>Total Spent: ${dashboardData.total_spent}</p>
+              <p>Employer's Money: ${dashboardData.total_spent}</p>
+              <div className="money-actions">
+                <button
+                  className="action-btn add-money"
+                  onClick={() => {
+                    setMoneyAction('add');
+                    setShowMoneyForm(true);
+                  }}
+                >
+                  ➕ Add Money
+                </button>
+                <button
+                  className="action-btn reduce-money"
+                  onClick={() => {
+                    setMoneyAction('reduce');
+                    setShowMoneyForm(true);
+                  }}
+                >
+                  ➖ Reduce Money
+                </button>
+              </div>
               {dashboardData.transactions.length > 0 ? (
                 <div className="transactions-list">
                   {dashboardData.transactions.map(tx => (
@@ -430,12 +680,243 @@ function Dashboard() {
         )}
       </section>
 
+      {/* Payout Modal */}
+      {showPayoutForm && (
+        <div className="modal-overlay" onClick={() => setShowPayoutForm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>Process Payout</h3>
+            <div className="form-group">
+              <label htmlFor="payout-amount">Amount ($)</label>
+              <input
+                type="number"
+                id="payout-amount"
+                placeholder="Enter amount"
+                value={payoutForm.amount}
+                onChange={(e) => setPayoutForm({...payoutForm, amount: e.target.value})}
+                min="0"
+                step="0.01"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="payout-description">Description</label>
+              <input
+                type="text"
+                id="payout-description"
+                placeholder="Payment description"
+                value={payoutForm.description}
+                onChange={(e) => setPayoutForm({...payoutForm, description: e.target.value})}
+                required
+              />
+            </div>
+            <div className="modal-actions">
+              <button
+                className="cancel-btn"
+                onClick={() => setShowPayoutForm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="submit-btn"
+                onClick={() => handlePayout(payoutForm.applicationId)}
+                disabled={processingPayout || !payoutForm.amount || !payoutForm.description}
+              >
+                {processingPayout ? 'Processing...' : 'Process Payout'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Money Management Modal */}
+      {showMoneyForm && (
+        <div className="modal-overlay" onClick={() => setShowMoneyForm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>{moneyAction === 'add' ? 'Add Money' : 'Reduce Money'}</h3>
+            <div className="form-group">
+              <label htmlFor="money-amount">Amount ($)</label>
+              <input
+                type="number"
+                id="money-amount"
+                placeholder="Enter amount"
+                value={moneyForm.amount}
+                onChange={(e) => setMoneyForm({...moneyForm, amount: e.target.value})}
+                min="0"
+                step="0.01"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="money-description">Description</label>
+              <input
+                type="text"
+                id="money-description"
+                placeholder="Transaction description"
+                value={moneyForm.description}
+                onChange={(e) => setMoneyForm({...moneyForm, description: e.target.value})}
+                required
+              />
+            </div>
+            <div className="modal-actions">
+              <button
+                className="cancel-btn"
+                onClick={() => setShowMoneyForm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="submit-btn"
+                onClick={() => handleMoneyAction()}
+                disabled={processingMoney || !moneyForm.amount || !moneyForm.description}
+              >
+                {processingMoney ? 'Processing...' : (moneyAction === 'add' ? 'Add Money' : 'Reduce Money')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <footer className="footer">
         <p>&copy; {new Date().getFullYear()} AI-Powered Job Recommendation</p>
         <p>Helping you connect with the right opportunities</p>
       </footer>
-    </div>
+        {/* Floating Chat FAB & Panel */}
+        <div>
+          <div className="ai-chat-fab" onClick={() => setChatOpen(open => !open)} title="Open AI Chat">
+            💬
+          </div>
+
+          {chatOpen && (
+            <div className="ai-chat-panel" role="dialog" aria-label="AI Career Chat">
+              <div className="ai-chat-header">AI Career Advisor</div>
+              <div className="ai-chat-messages" id="ai-chat-messages">
+                {chatMessages.length === 0 && (
+                  <div className="ai-msg bot">Hi! Tell me your skills (comma-separated) and I will suggest jobs that fit you.</div>
+                )}
+                {chatMessages.map((m, i) => (
+                  <div key={i} className={`ai-msg ${m.role === 'user' ? 'user' : 'bot'}`}>
+                    {m.text}
+                  </div>
+                ))}
+              </div>
+              <div className="ai-chat-input">
+                <input className="ai-input-field" value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="e.g. PHP, Laravel, React | optionally: experience=mid" />
+                <button className="ai-send-btn" onClick={async () => {
+                  if (!chatInput.trim()) return;
+                  const text = chatInput.trim();
+                  setChatMessages(prev => [...prev, { role: 'user', text }]);
+                  setChatInput('');
+                  setChatLoading(true);
+                  try {
+                    // Parse skills and optional experience
+                    let skills = [];
+                    let experience = '';
+                    const parts = text.split('|').map(p => p.trim());
+                    if (parts.length > 0) {
+                      skills = parts[0].split(',').map(s => s.trim()).filter(Boolean);
+                    }
+                    if (parts.length > 1) {
+                      const expPart = parts[1];
+                      const match = expPart.match(/experience\s*=\s*(\w+)/i);
+                      if (match) experience = match[1];
+                    }
+                    if (skills.length === 0) {
+                      setChatMessages(prev => [...prev, { role: 'bot', text: 'Please include at least one skill (comma-separated).' }]);
+                      setChatLoading(false);
+                      return;
+                    }
+                    const token = localStorage.getItem('token');
+                    const resp = await axios.post(`${API_URL}/ai/skill-chat`, { skills, experience, limit: 5 }, { headers: { Authorization: `Bearer ${token}` } });
+                    const raw = resp.data.suggestions || [];
+                    // keep only high-confidence suggestions (80%+)
+                    const suggestions = raw.filter(s => (s.confidence ?? 0) >= 80);
+                    setSuggestions(suggestions);
+                    try {
+                      // persist only high-confidence suggestions so Jobs page can display them
+                      localStorage.setItem('ai_suggestions', JSON.stringify(suggestions));
+                    } catch (e) {
+                      console.warn('Failed to persist AI suggestions', e);
+                    }
+                    if (suggestions.length === 0) {
+                      setChatMessages(prev => [...prev, { role: 'bot', text: 'No suggestions found.' }]);
+                    } else {
+                      const sb = suggestions.map((s, idx) => `${idx+1}. ${s.title} (${s.recommended_level || 'N/A'}) — ${s.confidence ?? 'N/A'}%`).join('\n');
+                      setChatMessages(prev => [...prev, { role: 'bot', text: sb }]);
+                    }
+                  } catch (err) {
+                    console.error('Chat send failed', err);
+                    setChatMessages(prev => [...prev, { role: 'bot', text: 'AI request failed. Try again later.' }]);
+                  } finally {
+                    setChatLoading(false);
+                    // scroll to bottom
+                    setTimeout(() => {
+                      const el = document.getElementById('ai-chat-messages');
+                      if (el) el.scrollTop = el.scrollHeight;
+                    }, 50);
+                  }
+                }}>{chatLoading ? '...' : 'Send'}</button>
+              </div>
+            </div>
+          )}
+              {suggestions.length > 0 && (
+                <div className="ai-suggestions">
+                  <h4>Suggested Jobs</h4>
+                  {suggestions.map((s, idx) => (
+                    <div key={idx} className="suggestion-card">
+                      <strong>{s.title}</strong>
+                      <p className="suggestion-desc">{s.description}</p>
+                      <div className="suggestion-meta">{s.recommended_level} • {s.confidence}%</div>
+                      <div className="suggestion-actions">
+                        <button onClick={async () => {
+                          // If job_id present, try to apply directly
+                          const jobId = s.job_id;
+                          if (!jobId) {
+                            // Navigate to job search/detail fallback
+                            alert('Job detail not available. Redirecting to jobs list.');
+                            navigate('/jobs');
+                            return;
+                          }
+                          setApplying(jobId);
+                          try {
+                            const token = localStorage.getItem('token');
+                            await axios.post(`${API_URL}/applications`, { job_id: jobId }, { headers: { Authorization: `Bearer ${token}` } });
+                            alert('Application submitted successfully!');
+                            // update dashboard data and clear suggestions
+                            fetchDashboard();
+                            setSuggestions([]);
+                          } catch (error) {
+                            console.error('Failed to apply from suggestion:', error);
+                            if (error.response && error.response.status === 409) {
+                              alert('You have already applied for this job.');
+                            } else {
+                              alert('Failed to apply for the job. Please try again.');
+                            }
+                          } finally {
+                            setApplying(null);
+                          }
+                        }} disabled={applying === s.job_id} className="apply-btn">
+                          {applying === s.job_id ? 'Applying...' : 'Apply with Resume'}
+                        </button>
+                        <button onClick={() => {
+                          // Open job detail page if available
+                          if (s.job_id) {
+                            navigate(`/jobs/${s.job_id}`);
+                          } else {
+                            navigate('/jobs');
+                          }
+                          setChatOpen(false);
+                        }} className="view-btn">View</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+        </div>
+      </div>
   );
 }
 
 export default Dashboard;
+
+    // Floating Chat UI: render at bottom-right
+    /* We'll mount chat markup via a small component-like block inserted into DOM by React return. */

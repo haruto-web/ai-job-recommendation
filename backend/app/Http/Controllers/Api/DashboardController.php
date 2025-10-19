@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\Job;
+use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -41,12 +42,21 @@ class DashboardController extends Controller
 
         $profile = $user->profile; // Assuming User has profile relationship
 
-        $transactions = [
-            ['id' => 1, 'amount' => 500, 'type' => 'earned', 'description' => 'Payment for completed project', 'date' => '2024-10-15'],
-            ['id' => 2, 'amount' => 200, 'type' => 'earned', 'description' => 'Freelance work', 'date' => '2024-10-10'],
-        ];
+        $transactions = Payment::where('jobseeker_id', $user->id)
+            ->with(['application.job', 'employer'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($payment) {
+                return [
+                    'id' => $payment->id,
+                    'amount' => $payment->amount,
+                    'type' => 'earned',
+                    'description' => $payment->description,
+                    'date' => $payment->processed_at->format('Y-m-d'),
+                ];
+            });
 
-        $totalEarnings = array_sum(array_column($transactions, 'amount'));
+        $totalEarnings = $transactions->sum('amount');
 
         return response()->json([
             'user_type' => 'jobseeker',
@@ -70,12 +80,35 @@ class DashboardController extends Controller
             $query->where('user_id', $user->id);
         })->where('status', 'accepted')->with(['user', 'job'])->get();
 
-        $transactions = [
-            ['id' => 1, 'amount' => -300, 'type' => 'paid', 'description' => 'Payment to freelancer', 'date' => '2024-10-14'],
-            ['id' => 2, 'amount' => -150, 'type' => 'paid', 'description' => 'Project payment', 'date' => '2024-10-12'],
-        ];
+        $transactions = Payment::where('employer_id', $user->id)
+            ->with(['application.job', 'jobseeker'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($payment) {
+                $amount = $payment->amount !== null ? (float) $payment->amount : 0.0;
+                $type = 'paid';
 
-        $totalSpent = abs(array_sum(array_column($transactions, 'amount')));
+                if ($payment->type === 'money_added') {
+                    $type = 'added';
+                } elseif ($payment->type === 'money_reduced') {
+                    $type = 'reduced';
+                    $amount = -((float)$amount);
+                } else {
+                    $amount = -((float)$amount); // Regular payments are negative
+                }
+
+                return [
+                    'id' => $payment->id,
+                    'amount' => $amount,
+                    'type' => $type,
+                    'description' => $payment->description,
+                    'date' => $payment->processed_at->format('Y-m-d'),
+                ];
+            });
+
+        // Compute employer balance by summing signed transaction amounts.
+        // 'added' -> positive, 'reduced'/'paid' -> negative as set above.
+        $totalSpent = (float) $transactions->sum('amount');
 
         return response()->json([
             'user_type' => 'employer',

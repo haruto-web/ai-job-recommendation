@@ -10,7 +10,14 @@ class OpenAIService
 
     public function __construct()
     {
-        $this->client = OpenAI::client(config('services.openai.api_key'));
+        $apiKey = config('services.openai.api_key');
+
+        if (!is_string($apiKey) || trim($apiKey) === '') {
+            // Throw a clear exception so callers can handle missing API key
+            throw new \RuntimeException('OpenAI API key not configured in services.openai.api_key');
+        }
+
+        $this->client = OpenAI::client($apiKey);
     }
 
     public function extractSkillsFromResume($resumeText)
@@ -103,5 +110,30 @@ class OpenAIService
         $result = json_decode($content, true);
 
         return $result ?: ['match_score' => 0, 'reasoning' => 'Unable to calculate match'];
+    }
+
+    /**
+     * Suggest jobs given user's skills and experience.
+     * Returns an array of suggestions: [{title, short_description, match_reason, score}]
+     */
+    public function suggestJobsForSkills(array $skills, string $experience = '', int $limit = 5)
+    {
+        $skillsString = implode(', ', $skills);
+
+        $prompt = "You are an AI career advisor. Given the user's skills: {$skillsString} and experience: {$experience}, return up to {$limit} suggested job titles and short descriptions that best fit this user. Respond with a JSON array of objects with keys: title, description, recommended_level (entry|mid|senior|expert), and confidence (0-100).";
+
+        $response = $this->client->chat()->create([
+            'model' => 'gpt-3.5-turbo',
+            'messages' => [
+                ['role' => 'system', 'content' => 'You are an expert career advisor.'],
+                ['role' => 'user', 'content' => $prompt]
+            ],
+            'max_tokens' => 800,
+        ]);
+
+        $content = $response->choices[0]->message->content;
+        $suggestions = json_decode($content, true);
+
+        return is_array($suggestions) ? $suggestions : [];
     }
 }

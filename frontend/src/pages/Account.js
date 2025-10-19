@@ -16,8 +16,7 @@ function Account({ isLoggedIn }) {
     portfolio_url: ''
   });
   const [editingProfile, setEditingProfile] = useState(false);
-  const [aiAnalysis, setAiAnalysis] = useState(null);
-  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
+  // AI analysis and resume management moved to the Dashboard page
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -29,20 +28,13 @@ function Account({ isLoggedIn }) {
           });
           setUser(response.data);
           setUserType(response.data.user_type);
-          if (response.data.profile) {
+            if (response.data.profile) {
             setProfileData({
               bio: response.data.profile.bio || '',
               skills: response.data.profile.skills || [],
               experience_level: response.data.profile.experience_level || '',
               portfolio_url: response.data.profile.portfolio_url || ''
             });
-            
-            // Auto-fetch AI analysis if user has resumes but no analysis
-            if ((response.data.profile.resumes && response.data.profile.resumes.length > 0) || response.data.profile.resume_url) {
-              if (!response.data.profile.ai_analysis) {
-                fetchAiAnalysis();
-              }
-            }
           }
         } catch (error) {
           console.error('Failed to fetch user:', error);
@@ -56,21 +48,7 @@ function Account({ isLoggedIn }) {
     }
   }, [isLoggedIn]);
 
-  const fetchAiAnalysis = async () => {
-    try {
-      setLoadingAnalysis(true);
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/user/resume-analysis`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setAiAnalysis(response.data);
-    } catch (error) {
-      console.error('Failed to fetch AI analysis:', error);
-      setAiAnalysis(null);
-    } finally {
-      setLoadingAnalysis(false);
-    }
-  };
+  // AI analysis is available on the Dashboard page for jobseekers
 
   const handleSaveUserType = async () => {
     try {
@@ -220,9 +198,9 @@ function Account({ isLoggedIn }) {
             <div className="detail-item">
               <strong>Joined:</strong> {new Date(user.created_at).toLocaleDateString()}
             </div>
-            <div className="detail-item">
+            {/* <div className="detail-item">
               <strong>Email Verified:</strong> {user.email_verified_at ? 'Yes' : 'No'}
-            </div>
+            </div> */}
             <div className="detail-item">
               <strong>User Type:</strong> {userType === 'jobseeker' ? 'Job Seeker' : 'Employer'}
             </div>

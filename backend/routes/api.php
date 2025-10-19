@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\JobController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ApplicationController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\StorageController;
 use Illuminate\Support\Facades\Route;
 
@@ -13,11 +14,7 @@ Route::post('register', [AuthController::class, 'register']);
 Route::get('jobs', [JobController::class, 'index']);
 Route::get('jobs/{id}', [JobController::class, 'show']);
 
-// Email verification and password reset (public)
-Route::post('send-email-verification', [AuthController::class, 'sendEmailVerification']);
-Route::post('verify-email', [AuthController::class, 'verifyEmail']);
-Route::post('send-password-reset', [AuthController::class, 'sendPasswordResetLink']);
-Route::post('reset-password', [AuthController::class, 'resetPassword']);
+
 
 // Storage route for serving files
 Route::get('/storage/{path}', [StorageController::class, 'show'])->where('path', '.*');
@@ -47,4 +44,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Dashboard
     Route::get('dashboard', [DashboardController::class, 'index']);
+
+    // AI chat for skills -> job suggestions
+    Route::post('ai/skill-chat', [\App\Http\Controllers\Api\AiController::class, 'skillChat']);
+
+    // Payments
+    Route::get('payments', [PaymentController::class, 'index']);
+    Route::post('payments', [PaymentController::class, 'store']);
+    Route::post('manage-money', [PaymentController::class, 'manageMoney']);
 });

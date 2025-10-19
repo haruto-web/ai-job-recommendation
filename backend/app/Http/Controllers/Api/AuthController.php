@@ -67,8 +67,18 @@ class AuthController extends Controller
             ]);
         }
 
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
+
+        if (! $user instanceof User) {
+            return response()->json(['error' => 'Authentication failed'], 401);
+        }
+
+        // Create token
         $token = $user->createToken('API Token')->plainTextToken;
+
+        // Avoid returning sensitive fields
+        $user->makeHidden(['password', 'remember_token']);
 
         return response()->json([
             'user' => $user,
@@ -134,6 +144,11 @@ class AuthController extends Controller
 
         // Ensure user has a profile
         $profile = $this->ensureProfile($user);
+        if (! $profile) {
+            // Defensive fallback: create and re-fetch
+            $user->profile()->create([]);
+            $profile = $this->ensureProfile($user);
+        }
 
         $profile->update($request->only(['bio', 'skills', 'experience_level', 'portfolio_url']));
 
@@ -166,11 +181,15 @@ class AuthController extends Controller
             $extractedSkills = [];
 
             try {
-                if (class_exists(OpenAIService::class)) {
-                    $openai = new OpenAIService();
-                    $extractedSkills = $openai->extractSkillsFromResume($resumeText) ?? [];
+                if (class_exists(OpenAIService::class) && is_string(config('services.openai.api_key')) && trim(config('services.openai.api_key')) !== '') {
+                    try {
+                        $openai = new OpenAIService();
+                        $extractedSkills = $openai->extractSkillsFromResume($resumeText) ?? [];
+                    } catch (\Throwable $e) {
+                        Log::error('OpenAI skill extraction failed at instantiation or call', ['error' => $e->getMessage()]);
+                    }
                 } else {
-                    Log::info('OpenAIService not installed; skipping skill extraction');
+                    Log::info('OpenAIService not available or API key missing; skipping skill extraction');
                 }
             } catch (\Throwable $e) {
                 Log::error('OpenAI skill extraction failed', ['error' => $e->getMessage()]);
@@ -212,11 +231,19 @@ class AuthController extends Controller
 
             // Perform comprehensive AI analysis
             try {
-                if (class_exists(OpenAIService::class)) {
-                    $openai = new OpenAIService();
-                    $analysis = $openai->analyzeResumeComprehensively($resumeText);
+                if (class_exists(OpenAIService::class) && is_string(config('services.openai.api_key')) && trim(config('services.openai.api_key')) !== '') {
+                    try {
+                        $openai = new OpenAIService();
+                        $analysis = $openai->analyzeResumeComprehensively($resumeText);
+
+                        if ($analysis) {
+                            
+                        }
+                    } catch (\Throwable $e) {
+                        Log::error('Comprehensive resume analysis failed at instantiation or call', ['error' => $e->getMessage()]);
+                    }
                     
-                    if ($analysis) {
+                    if (! empty($analysis)) {
                         // Update profile with AI analysis results
                         $updateData = [
                             'ai_analysis' => $analysis,
@@ -299,13 +326,12 @@ class AuthController extends Controller
                 if ($action === 'add' && $request->hasFile('resume')) {
                     $request->validate([
                         'resume' => 'required|file|mimes:pdf,doc,docx|max:5120', // 5MB max
-                        'name' => 'required|string|max:255',
                     ]);
 
                     $path = $request->file('resume')->store('resumes', 'public');
 
                     $resumes[] = [
-                        'name' => $request->input('name'),
+                        'name' => $request->file('resume')->getClientOriginalName(),
                         'url' => $path,
                     ];
 
@@ -335,6 +361,11 @@ class AuthController extends Controller
                 $request->validate([
                     'resume' => 'required|file|mimes:pdf,doc,docx|max:5120',
                 ]);
+
+                if (! $profile) {
+                    // Defensive fallback: create profile record
+                    $profile = $user->profile()->create([]);
+                }
 
                 if ($profile->resume_url) {
                     Storage::disk('public')->delete($profile->resume_url);
@@ -464,158 +495,7 @@ class AuthController extends Controller
         return response()->json(['message' => 'All notifications marked as read']);
     }
 
-    /**
-     * Send email verification
-     */
-    public function sendEmailVerification(Request $request)
-    {
-        $user = $request->user();
-        
-        if ($user->hasVerifiedEmail()) {
-            return response()->json(['message' => 'Email already verified'], 400);
-        }
 
-        // Generate verification token
-        $token = Str::random(64);
-        
-        // Store token in database (you might want to create a separate table for this)
-        DB::table('email_verification_tokens')->updateOrInsert(
-            ['email' => $user->email],
-            ['token' => $token, 'created_at' => now()]
-        );
-
-        // In a real application, you would send an email here
-        // For now, we'll just return the token for testing
-        return response()->json([
-            'message' => 'Verification email sent',
-            'verification_token' => $token, // Remove this in production
-            'verification_url' => url("/verify-email?token={$token}&email={$user->email}")
-        ]);
-    }
-
-    /**
-     * Verify email
-     */
-    public function verifyEmail(Request $request)
-    {
-        $request->validate([
-            'token' => 'required|string',
-            'email' => 'required|email',
-        ]);
-
-        $token = $request->token;
-        $email = $request->email;
-
-        // Check if token exists and is valid
-        $verificationRecord = DB::table('email_verification_tokens')
-            ->where('email', $email)
-            ->where('token', $token)
-            ->where('created_at', '>=', now()->subHours(24)) // Token expires in 24 hours
-            ->first();
-
-        if (!$verificationRecord) {
-            return response()->json(['message' => 'Invalid or expired verification token'], 400);
-        }
-
-        // Find and verify the user
-        $user = User::where('email', $email)->first();
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
-        }
-
-        $user->markEmailAsVerified();
-
-        // Delete the verification token
-        DB::table('email_verification_tokens')->where('email', $email)->delete();
-
-        // Send notification
-        Notification::create([
-            'user_id' => $user->id,
-            'type' => 'email_verified',
-            'title' => '✅ Email Verified!',
-            'message' => 'Your email has been successfully verified. You can now access all features!',
-        ]);
-
-        return response()->json(['message' => 'Email verified successfully']);
-    }
-
-    /**
-     * Send password reset link
-     */
-    public function sendPasswordResetLink(Request $request)
-    {
-        $request->validate(['email' => 'required|email']);
-
-        $user = User::where('email', $request->email)->first();
-        if (!$user) {
-            return response()->json(['message' => 'If the email exists, a reset link has been sent'], 200);
-        }
-
-        // Generate reset token
-        $token = Str::random(64);
-        
-        // Store token in database
-        DB::table('password_reset_tokens')->updateOrInsert(
-            ['email' => $user->email],
-            ['token' => $token, 'created_at' => now()]
-        );
-
-        // In a real application, you would send an email here
-        // For now, we'll just return the token for testing
-        return response()->json([
-            'message' => 'Password reset link sent to your email',
-            'reset_token' => $token, // Remove this in production
-            'reset_url' => url("/reset-password?token={$token}&email={$user->email}")
-        ]);
-    }
-
-    /**
-     * Reset password
-     */
-    public function resetPassword(Request $request)
-    {
-        $request->validate([
-            'token' => 'required|string',
-            'email' => 'required|email',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
-        $token = $request->token;
-        $email = $request->email;
-        $password = $request->password;
-
-        // Check if token exists and is valid
-        $resetRecord = DB::table('password_reset_tokens')
-            ->where('email', $email)
-            ->where('token', $token)
-            ->where('created_at', '>=', now()->subHours(1)) // Token expires in 1 hour
-            ->first();
-
-        if (!$resetRecord) {
-            return response()->json(['message' => 'Invalid or expired reset token'], 400);
-        }
-
-        // Find and update the user
-        $user = User::where('email', $email)->first();
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
-        }
-
-        $user->update(['password' => Hash::make($password)]);
-
-        // Delete the reset token
-        DB::table('password_reset_tokens')->where('email', $email)->delete();
-
-        // Send notification
-        Notification::create([
-            'user_id' => $user->id,
-            'type' => 'password_reset',
-            'title' => '🔒 Password Reset',
-            'message' => 'Your password has been successfully reset. If you did not make this change, please contact support immediately.',
-        ]);
-
-        return response()->json(['message' => 'Password reset successfully']);
-    }
 
     /**
      * Ensure the given user has a profile record and return it.

@@ -6,21 +6,47 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 function Jobs() {
   const [jobs, setJobs] = useState([]);
+  const [aiSuggestions, setAiSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(null);
   const [user, setUser] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [resumeName, setResumeName] = useState('');
   const [uploading, setUploading] = useState(false);
 
   const [replacingIndex, setReplacingIndex] = useState(null);
   const [replacingFile, setReplacingFile] = useState(null);
+
+  // Job creation states for employers
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [jobForm, setJobForm] = useState({
+    title: '',
+    company: '',
+    location: '',
+    type: 'full-time',
+    salary: '',
+    description: '',
+  });
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
         const response = await axios.get(`${API_URL}/jobs`);
         setJobs(response.data);
+        // load any persisted AI suggestions
+        try {
+          const raw = localStorage.getItem('ai_suggestions');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              // ensure we only show high-confidence suggestions and with job_id
+              const filtered = parsed.filter(s => (s.confidence ?? 0) >= 80 && (s.job_id || s.job_id === 0 ? true : false));
+              setAiSuggestions(filtered);
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to load AI suggestions from storage', e);
+        }
       } catch (error) {
         console.error('Failed to fetch jobs:', error);
       } finally {
@@ -67,14 +93,13 @@ function Jobs() {
   };
 
   const handleAddResume = async () => {
-    if (!selectedFile || !resumeName.trim()) return;
+    if (!selectedFile) return;
 
     setUploading(true);
     try {
       const token = localStorage.getItem('token');
       const formData = new FormData();
       formData.append('resume', selectedFile);
-      formData.append('name', resumeName.trim());
       formData.append('action', 'add');
 
       const response = await axios.post(`${API_URL}/user/resume`, formData, {
@@ -84,7 +109,6 @@ function Jobs() {
       });
       setUser(response.data);
       setSelectedFile(null);
-      setResumeName('');
       alert('Resume added successfully!');
       // Redirect to Account page after successful upload
       window.location.href = '/account';
@@ -146,6 +170,34 @@ function Jobs() {
     }
   };
 
+  const handleCreateJob = async () => {
+    if (!jobForm.title.trim() || !jobForm.company.trim() || !jobForm.location.trim()) return;
+
+    setCreating(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API_URL}/jobs`, jobForm, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setJobs([response.data, ...jobs]);
+      setJobForm({
+        title: '',
+        company: '',
+        location: '',
+        type: 'full-time',
+        salary: '',
+        description: '',
+      });
+      setShowCreateForm(false);
+      alert('Job posted successfully!');
+    } catch (error) {
+      console.error('Failed to create job:', error);
+      alert('Failed to create job. Please try again.');
+    } finally {
+      setCreating(false);
+    }
+  };
+
 
 
   if (loading) {
@@ -163,19 +215,93 @@ function Jobs() {
         <div className="jobs-section">
           <h2>All Posted Jobs</h2>
           <p>Browse all available job opportunities.</p>
+
+          {user && user.user_type === 'employer' && (
+            <div style={{ marginBottom: '20px' }}>
+              <button
+                onClick={() => setShowCreateForm(!showCreateForm)}
+                className="upload-btn"
+                style={{ marginBottom: '10px' }}
+              >
+                {showCreateForm ? 'Cancel' : 'Post New Job'}
+              </button>
+
+              {showCreateForm && (
+                <div className="job-form" style={{ marginBottom: '20px', padding: '20px', border: '1px solid #ddd', borderRadius: '5px' }}>
+                  <h3>Create New Job Posting</h3>
+                  <input
+                    type="text"
+                    placeholder="Job Title"
+                    value={jobForm.title}
+                    onChange={(e) => setJobForm({...jobForm, title: e.target.value})}
+                    style={{ width: '100%', marginBottom: '10px', padding: '8px' }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Company"
+                    value={jobForm.company}
+                    onChange={(e) => setJobForm({...jobForm, company: e.target.value})}
+                    style={{ width: '100%', marginBottom: '10px', padding: '8px' }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Location"
+                    value={jobForm.location}
+                    onChange={(e) => setJobForm({...jobForm, location: e.target.value})}
+                    style={{ width: '100%', marginBottom: '10px', padding: '8px' }}
+                  />
+                  <select
+                    value={jobForm.type}
+                    onChange={(e) => setJobForm({...jobForm, type: e.target.value})}
+                    style={{ width: '100%', marginBottom: '10px', padding: '8px' }}
+                  >
+                    <option value="full-time">Full-time</option>
+                    <option value="part-time">Part-time</option>
+                    <option value="contract">Contract</option>
+                    <option value="freelance">Freelance</option>
+                  </select>
+                  <input
+                    type="number"
+                    placeholder="Salary (optional)"
+                    value={jobForm.salary}
+                    onChange={(e) => setJobForm({...jobForm, salary: e.target.value})}
+                    style={{ width: '100%', marginBottom: '10px', padding: '8px' }}
+                  />
+                  <textarea
+                    placeholder="Job Description"
+                    value={jobForm.description}
+                    onChange={(e) => setJobForm({...jobForm, description: e.target.value})}
+                    rows="4"
+                    style={{ width: '100%', marginBottom: '10px', padding: '8px' }}
+                  />
+                  <button
+                    onClick={handleCreateJob}
+                    disabled={creating || !jobForm.title.trim() || !jobForm.company.trim() || !jobForm.location.trim()}
+                    className="upload-btn"
+                  >
+                    {creating ? 'Posting...' : 'Post Job'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="job-cards">
             {jobs.length > 0 ? jobs.map(job => (
               <div key={job.id} className="job-card">
                 <h3>{job.title}</h3>
                 <p>{job.company} - {job.location} - {job.type}</p>
                 {job.salary && <p>Salary: ${job.salary}</p>}
-                <button
-                  onClick={() => handleApply(job.id)}
-                  disabled={applying === job.id}
-                  className="apply-btn"
-                >
-                  {applying === job.id ? 'Applying...' : 'Apply'}
-                </button>
+                {job.description && <p>{job.description}</p>}
+                {user && user.user_type === 'jobseeker' && (
+                  <button
+                    onClick={() => handleApply(job.id)}
+                    disabled={applying === job.id}
+                    className="apply-btn"
+                  >
+                    {applying === job.id ? 'Applying...' : 'Apply'}
+                  </button>
+                )}
               </div>
             )) : (
               <p>No jobs available.</p>
@@ -188,96 +314,50 @@ function Jobs() {
             <h2>Matched Jobs for You</h2>
             <p>Jobs that match your profile based on our AI analysis.</p>
             <div className="job-cards">
-              {jobs.filter(job => job.match_score && job.match_score > 0).length > 0 ? jobs.filter(job => job.match_score && job.match_score > 0).map(job => (
-                <div key={job.id} className="job-card">
-                  <h3>{job.title}</h3>
-                  <p>{job.company} - {job.location} - {job.type}</p>
-                  {job.salary && <p>Salary: ${job.salary}</p>}
-                  {job.match_score !== undefined && (
-                    <span className="match-score">{job.match_score}% match</span>
+              {((jobs.filter(job => job.match_score && job.match_score > 0)).length > 0 || aiSuggestions.length > 0) ? (
+                <>
+                  {aiSuggestions.length > 0 && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <h4>AI Suggestions</h4>
+                      {aiSuggestions.map((s, idx) => (
+                        <div key={idx} className="job-card">
+                          <h3>{s.title}</h3>
+                          <p>{s.recommended_level} • {s.confidence}%</p>
+                          <p>{s.description}</p>
+                          <button onClick={() => handleApply(s.job_id || 0)} disabled={applying === s.job_id} className="apply-btn">
+                            {applying === s.job_id ? 'Applying...' : 'Apply'}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                  <button
-                    onClick={() => handleApply(job.id)}
-                    disabled={applying === job.id}
-                    className="apply-btn"
-                  >
-                    {applying === job.id ? 'Applying...' : 'Apply'}
-                  </button>
-                </div>
-              )) : (
+
+                  {jobs.filter(job => job.match_score && job.match_score > 0).map(job => (
+                    <div key={job.id} className="job-card">
+                      <h3>{job.title}</h3>
+                      <p>{job.company} - {job.location} - {job.type}</p>
+                      {job.salary && <p>Salary: ${job.salary}</p>}
+                      {job.match_score !== undefined && (
+                        <span className="match-score">{job.match_score}% match</span>
+                      )}
+                      <button
+                        onClick={() => handleApply(job.id)}
+                        disabled={applying === job.id}
+                        className="apply-btn"
+                      >
+                        {applying === job.id ? 'Applying...' : 'Apply'}
+                      </button>
+                    </div>
+                  ))}
+                </>
+              ) : (
                 <p>No matched jobs available. Upload a resume to get personalized matches.</p>
               )}
             </div>
           </div>
         )}
 
-        {user && user.user_type === 'jobseeker' && (
-          <div className="jobs-section">
-            <h2>Manage Your Resumes</h2>
-            <p>Upload and manage multiple resumes to improve job matches and apply to jobs.</p>
-
-            {/* Add New Resume */}
-            <div className="resume-upload">
-              <input
-                type="text"
-                placeholder="Resume Name"
-                value={resumeName}
-                onChange={(e) => setResumeName(e.target.value)}
-              />
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx"
-                onChange={(e) => setSelectedFile(e.target.files[0])}
-              />
-              <button
-                onClick={handleAddResume}
-                disabled={!selectedFile || !resumeName.trim() || uploading}
-                className="upload-btn"
-              >
-                {uploading ? 'Adding...' : 'Add Resume'}
-              </button>
-
-              {/* List of Resumes */}
-              {user.profile && user.profile.resumes && user.profile.resumes.length > 0 && (
-                <div className="resume-list">
-                  <h3>Your Resumes</h3>
-                  {user.profile.resumes.map((resume, index) => (
-                    <div key={index} className="resume-item">
-                      <span>{resume.name}</span>
-                      <div className="resume-actions">
-                        <a href={`${API_URL}/storage/${resume.url}`} target="_blank" rel="noopener noreferrer">View</a>
-                        {replacingIndex === index ? (
-                          <div>
-                            <input
-                              type="file"
-                              accept=".pdf,.doc,.docx"
-                              onChange={(e) => setReplacingFile(e.target.files[0])}
-                            />
-                            <button onClick={() => handleReplaceResume(index)} disabled={!replacingFile || uploading}>
-                              {uploading ? 'Changing...' : 'Change Resume'}
-                            </button>
-                            <button onClick={() => setReplacingIndex(null)}>Cancel</button>
-                          </div>
-                        ) : (
-                          <button onClick={() => setReplacingIndex(index)}>Change Resume</button>
-                        )}
-                        <button onClick={() => handleDeleteResume(index)} className="delete-btn">Delete</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Legacy Single Resume Support */}
-            {user.profile && user.profile.resume_url && (!user.profile.resumes || user.profile.resumes.length === 0) && (
-              <div className="resume-list">
-                <p>Current Resume: <a href={`${API_URL}/storage/${user.profile.resume_url}`} target="_blank" rel="noopener noreferrer">View Resume</a></p>
-                <button onClick={() => handleDeleteResume()} className="delete-btn">Delete Resume</button>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Resume management moved to Dashboard for jobseekers */}
 
         <div className="jobs-section">
           <h2>How We Match Jobs</h2>
