@@ -350,54 +350,7 @@ function Dashboard() {
               )}
             </div>
 
-            {/* Resume management & AI analysis for jobseekers */}
-            <div className="dashboard-section">
-              <h2>Manage Your Resumes</h2>
-              <p>Upload and manage multiple resumes to improve job matches and get AI insights.</p>
 
-              <div style={{ marginTop: '10px' }}>
-                <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setSelectedFile(e.target.files[0])} />
-                <button onClick={handleAddResume} disabled={!selectedFile || uploadingResume} className="upload-btn" style={{ marginLeft: '8px' }}>
-                  {uploadingResume ? 'Adding...' : 'Add Resume'}
-                </button>
-              </div>
-
-              {dashboardData.profile && dashboardData.profile.resumes && dashboardData.profile.resumes.length > 0 && (
-                <div style={{ marginTop: '15px' }}>
-                  <h3>Your Resumes</h3>
-                  {dashboardData.profile.resumes.map((resume, index) => (
-                    <div key={index} style={{ marginBottom: '10px', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
-                      <span>{resume.name}</span>
-                      <div style={{ marginTop: '5px' }}>
-                        <a href={`${API_URL}/storage/${resume.url}`} target="_blank" rel="noopener noreferrer">View</a>
-                        {replacingIndex === index ? (
-                          <div>
-                            <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setReplacingFile(e.target.files[0])} />
-                            <button onClick={() => handleReplaceResume(index)} disabled={!replacingFile || uploadingResume}>{uploadingResume ? 'Changing...' : 'Change Resume'}</button>
-                            <button onClick={() => setReplacingIndex(null)}>Cancel</button>
-                          </div>
-                        ) : (
-                          <button onClick={() => setReplacingIndex(index)} style={{ marginLeft: '8px' }}>Change Resume</button>
-                        )}
-                        <button onClick={() => handleDeleteResume(index)} className="delete-btn" style={{ marginLeft: '8px' }}>Delete</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {dashboardData.profile && dashboardData.profile.resume_url && (!dashboardData.profile.resumes || dashboardData.profile.resumes.length === 0) && (
-                <div style={{ marginTop: '10px' }}>
-                  <p>Current Resume: <a href={`${API_URL}/storage/${dashboardData.profile.resume_url}`} target="_blank" rel="noopener noreferrer">View Resume</a></p>
-                  <button onClick={() => handleDeleteResume()} className="delete-btn">Delete Resume</button>
-                </div>
-              )}
-
-              {/* AI Analysis */}
-              <div style={{ marginTop: '20px', padding: '15px', border: '1px solid #007bff', borderRadius: '8px', backgroundColor: '#f8f9fa' }}>
-                <p style={{ marginTop: '8px' }}>Open the chat in the bottom-right to talk to the AI career advisor.</p>
-              </div>
-            </div>
           </div>
         ) : (
           <div className="employer-dashboard">
@@ -679,6 +632,57 @@ function Dashboard() {
           </div>
         )}
       </section>
+
+      {/* Resume management & AI analysis for jobseekers - outside grid */}
+      {dashboardData.user_type === 'jobseeker' && (
+        <div className="dashboard-section-resumes-section">
+          <h2>Manage Your Resumes</h2>
+          <p>Upload and manage multiple resumes to improve job matches and get AI insights.</p>
+
+          <div style={{ marginTop: '10px' }}>
+            <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setSelectedFile(e.target.files[0])} />
+            <button onClick={handleAddResume} disabled={!selectedFile || uploadingResume} className="upload-btn" style={{ marginLeft: '8px' }}>
+              {uploadingResume ? 'Adding...' : 'Add Resume'}
+            </button>
+          </div>
+
+          {dashboardData.profile && dashboardData.profile.resumes && dashboardData.profile.resumes.length > 0 && (
+            <div style={{ marginTop: '15px' }}>
+              <h3>Your Resumes</h3>
+              {dashboardData.profile.resumes.map((resume, index) => (
+                <div key={index} style={{ marginBottom: '10px', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
+                  <span>{resume.name}</span>
+                  <div style={{ marginTop: '5px' }}>
+                    <a href={`${API_URL}/storage/${resume.url}`} target="_blank" rel="noopener noreferrer">View</a>
+                    {replacingIndex === index ? (
+                      <div>
+                        <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setReplacingFile(e.target.files[0])} />
+                        <button onClick={() => handleReplaceResume(index)} disabled={!replacingFile || uploadingResume}>{uploadingResume ? 'Changing...' : 'Change Resume'}</button>
+                        <button onClick={() => setReplacingIndex(null)}>Cancel</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setReplacingIndex(index)} style={{ marginLeft: '8px' }}>Change Resume</button>
+                    )}
+                    <button onClick={() => handleDeleteResume(index)} className="delete-btn" style={{ marginLeft: '8px' }}>Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {dashboardData.profile && dashboardData.profile.resume_url && (!dashboardData.profile.resumes || dashboardData.profile.resumes.length === 0) && (
+            <div style={{ marginTop: '10px' }}>
+              <p>Current Resume: <a href={`${API_URL}/storage/${dashboardData.profile.resume_url}`} target="_blank" rel="noopener noreferrer">View Resume</a></p>
+              <button onClick={() => handleDeleteResume()} className="delete-btn">Delete Resume</button>
+            </div>
+          )}
+
+          {/* AI Analysis */}
+          <div style={{ marginTop: '20px', padding: '15px', border: '1px solid #007bff', borderRadius: '8px', backgroundColor: '#f8f9fa' }}>
+            <p style={{ marginTop: '8px' }}>Open the chat in the bottom-right to talk to the AI career advisor.</p>
+          </div>
+        </div>
+      )}
 
       {/* Payout Modal */}
       {showPayoutForm && (
