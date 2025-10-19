@@ -36,6 +36,50 @@ class OpenAIService
         return is_array($skills) ? $skills : [];
     }
 
+    public function analyzeResumeComprehensively($resumeText)
+    {
+        $response = $this->client->chat()->create([
+            'model' => 'gpt-3.5-turbo',
+            'messages' => [
+                [
+                    'role' => 'system',
+                    'content' => 'You are an AI assistant that analyzes resumes comprehensively. Extract detailed information and return a JSON object with the following structure:
+                    {
+                        "skills": ["skill1", "skill2"],
+                        "experience_years": "X years",
+                        "education": ["degree1", "degree2"],
+                        "certifications": ["cert1", "cert2"],
+                        "languages": ["language1", "language2"],
+                        "summary": "Brief professional summary",
+                        "strengths": ["strength1", "strength2"],
+                        "experience_level": "entry|mid|senior|expert",
+                        "key_achievements": ["achievement1", "achievement2"]
+                    }'
+                ],
+                [
+                    'role' => 'user',
+                    'content' => "Analyze this resume comprehensively: {$resumeText}"
+                ]
+            ],
+            'max_tokens' => 1000,
+        ]);
+
+        $content = $response->choices[0]->message->content;
+        $analysis = json_decode($content, true);
+
+        return $analysis ?: [
+            'skills' => [],
+            'experience_years' => 'Unknown',
+            'education' => [],
+            'certifications' => [],
+            'languages' => [],
+            'summary' => 'Unable to generate summary',
+            'strengths' => [],
+            'experience_level' => 'entry',
+            'key_achievements' => []
+        ];
+    }
+
     public function matchJobToUser($jobDescription, $userSkills, $userExperience)
     {
         $skillsString = implode(', ', $userSkills);

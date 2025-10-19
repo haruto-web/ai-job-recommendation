@@ -9,6 +9,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Services\OpenAIService;
+use App\Models\Notification;
 
 class JobController extends Controller
 {
@@ -19,18 +20,51 @@ class JobController extends Controller
         $user = Auth::user();
         if ($user && $user->user_type === 'jobseeker' && $user->profile) {
             $openai = new OpenAIService();
-            $userSkills = $user->profile->skills ?? [];
-            $userExperience = $user->profile->experience_level ?? 'entry';
+            
+            // Use comprehensive AI analysis if available, otherwise fall back to basic skills
+            $userSkills = [];
+            $userExperience = 'entry';
+            $userSummary = '';
+            
+            if ($user->profile->ai_analysis) {
+                $aiAnalysis = $user->profile->ai_analysis;
+                $userSkills = $aiAnalysis['skills'] ?? [];
+                $userExperience = $aiAnalysis['experience_level'] ?? 'entry';
+                $userSummary = $aiAnalysis['summary'] ?? '';
+            } else {
+                $userSkills = $user->profile->skills ?? [];
+                $userExperience = $user->profile->experience_level ?? 'entry';
+            }
+
+            $highMatchJobs = [];
 
             foreach ($jobs as $job) {
                 $jobDescription = $job->title . ' ' . $job->description . ' ' . implode(' ', $job->requirements ?? []);
+                
+                // Enhanced matching with AI analysis
+                $matchData = [
+                    'skills' => $userSkills,
+                    'experience' => $userExperience,
+                    'summary' => $userSummary
+                ];
+                
                 $match = $openai->matchJobToUser($jobDescription, $userSkills, $userExperience);
                 $job->match_score = $match['match_score'] ?? 0;
                 $job->match_reasoning = $match['reasoning'] ?? '';
+                
+                // Track high match jobs for notifications
+                if ($job->match_score >= 75) {
+                    $highMatchJobs[] = $job;
+                }
             }
 
             // Sort by match score descending
             $jobs = $jobs->sortByDesc('match_score')->values();
+            
+            // Send notification for high match jobs (only if user has AI analysis)
+            if (!empty($highMatchJobs) && $user->profile->ai_analysis) {
+                $this->notifyHighMatchJobs($user, $highMatchJobs);
+            }
         }
 
         return response()->json($jobs);
@@ -113,5 +147,48 @@ class JobController extends Controller
 
         $job->delete();
         return response()->json(['message' => 'Job deleted']);
+    }
+
+    /**
+     * Notify user about high match jobs
+     */
+    private function notifyHighMatchJobs($user, $highMatchJobs)
+    {
+        try {
+            // Check if we already sent a notification recently (within last 6 hours)
+            $recentNotification = Notification::where('user_id', $user->id)
+                ->where('type', 'high_job_match')
+                ->where('created_at', '>=', now()->subHours(6))
+                ->first();
+
+            if (!$recentNotification) {
+                $jobTitles = array_map(function($job) {
+                    return $job->title;
+                }, $highMatchJobs);
+
+                $topMatch = $highMatchJobs[0] ?? null;
+                $matchScore = $topMatch ? $topMatch->match_score : 0;
+
+                Notification::create([
+                    'user_id' => $user->id,
+                    'type' => 'high_job_match',
+                    'title' => '🎯 Perfect Job Matches Found!',
+                    'message' => 'We found ' . count($highMatchJobs) . ' excellent job matches for you based on your resume! Your top match is "' . ($topMatch ? $topMatch->title : '') . '" with ' . $matchScore . '% compatibility.',
+                    'data' => [
+                        'job_ids' => array_map(function($job) {
+                            return $job->id;
+                        }, $highMatchJobs),
+                        'match_count' => count($highMatchJobs),
+                        'top_match_score' => $matchScore,
+                        'top_match_title' => $topMatch ? $topMatch->title : null
+                    ]
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send high match job notification', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }

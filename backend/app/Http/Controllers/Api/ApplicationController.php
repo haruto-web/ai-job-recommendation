@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\Job;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -58,7 +59,29 @@ class ApplicationController extends Controller
             'cover_letter' => $validated['cover_letter'] ?? null,
         ]);
 
-        return response()->json($application->load('job'), Response::HTTP_CREATED);
+        // Load the job and its owner
+        $application->load(['job', 'user']);
+        $job = $application->job;
+        $jobOwner = $job->user;
+
+        // Send notification to job owner (employer)
+        if ($jobOwner) {
+            Notification::create([
+                'user_id' => $jobOwner->id,
+                'type' => 'new_application',
+                'title' => '📝 New Job Application!',
+                'message' => $user->name . ' has applied for your job "' . $job->title . '". Check their resume and profile details.',
+                'data' => [
+                    'application_id' => $application->id,
+                    'job_id' => $job->id,
+                    'applicant_id' => $user->id,
+                    'applicant_name' => $user->name,
+                    'job_title' => $job->title
+                ]
+            ]);
+        }
+
+        return response()->json($application, Response::HTTP_CREATED);
     }
 
     public function update(Request $request, $id)

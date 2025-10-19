@@ -17,11 +17,20 @@ class UserProfile extends Model
         'portfolio_url',
         'resume_url',
         'resumes',
+        'ai_analysis',
+        'extracted_experience',
+        'extracted_education',
+        'extracted_certifications',
+        'extracted_languages',
+        'resume_summary',
+        'last_ai_analysis',
     ];
 
     protected $casts = [
         'skills' => 'array',
         'resumes' => 'array',
+        'ai_analysis' => 'array',
+        'last_ai_analysis' => 'datetime',
     ];
 
     public function user()

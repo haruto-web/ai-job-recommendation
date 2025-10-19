@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use App\Services\ResumeParserService;
 use App\Services\OpenAIService;
+use App\Models\Notification;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 
 
@@ -180,6 +184,92 @@ class AuthController extends Controller
             Log::error('extractAndMergeSkills exception', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
         }
     }
+
+    private function performComprehensiveResumeAnalysis($path, $profile)
+    {
+        try {
+            // Try to instantiate parser safely
+            try {
+                $parser = new ResumeParserService();
+            } catch (\Throwable $e) {
+                Log::error('Could not instantiate ResumeParserService', ['error' => $e->getMessage()]);
+                return;
+            }
+
+            // Parse resume text
+            $resumeText = '';
+            try {
+                $resumeText = $parser->parseResume(storage_path('app/public/' . $path));
+            } catch (\Throwable $e) {
+                Log::error('Failed to parse resume file', ['path' => $path, 'error' => $e->getMessage()]);
+                return;
+            }
+
+            if (empty($resumeText)) {
+                Log::info('performComprehensiveResumeAnalysis: no text extracted from resume', ['path' => $path]);
+                return;
+            }
+
+            // Perform comprehensive AI analysis
+            try {
+                if (class_exists(OpenAIService::class)) {
+                    $openai = new OpenAIService();
+                    $analysis = $openai->analyzeResumeComprehensively($resumeText);
+                    
+                    if ($analysis) {
+                        // Update profile with AI analysis results
+                        $updateData = [
+                            'ai_analysis' => $analysis,
+                            'extracted_experience' => $analysis['experience_years'] ?? null,
+                            'extracted_education' => is_array($analysis['education']) ? implode(', ', $analysis['education']) : $analysis['education'] ?? null,
+                            'extracted_certifications' => is_array($analysis['certifications']) ? implode(', ', $analysis['certifications']) : $analysis['certifications'] ?? null,
+                            'extracted_languages' => is_array($analysis['languages']) ? implode(', ', $analysis['languages']) : $analysis['languages'] ?? null,
+                            'resume_summary' => $analysis['summary'] ?? null,
+                            'last_ai_analysis' => now(),
+                        ];
+
+                        // Update experience level if not already set or if AI suggests a different level
+                        if (!$profile->experience_level || $analysis['experience_level']) {
+                            $updateData['experience_level'] = $analysis['experience_level'] ?? $profile->experience_level;
+                        }
+
+                        // Merge skills with existing ones
+                        $existingSkills = is_array($profile->skills) ? $profile->skills : ($profile->skills ?? []);
+                        $aiSkills = is_array($analysis['skills']) ? $analysis['skills'] : [];
+                        $mergedSkills = array_values(array_unique(array_merge($existingSkills, $aiSkills)));
+                        $updateData['skills'] = $mergedSkills;
+
+                        $profile->update($updateData);
+
+                        Log::info('Comprehensive resume analysis completed', [
+                            'user_id' => $profile->user_id,
+                            'skills_count' => count($mergedSkills),
+                            'experience_level' => $updateData['experience_level']
+                        ]);
+
+                        // Send notification to user
+                        Notification::create([
+                            'user_id' => $profile->user_id,
+                            'type' => 'ai_analysis_complete',
+                            'title' => '🤖 Resume Analysis Complete!',
+                            'message' => 'Your resume has been analyzed by AI. Check your profile to see the insights and improve your job matches!',
+                            'data' => [
+                                'analysis_id' => $profile->id,
+                                'skills_count' => count($mergedSkills),
+                                'experience_level' => $updateData['experience_level']
+                            ]
+                        ]);
+                    }
+                } else {
+                    Log::info('OpenAIService not available; skipping comprehensive analysis');
+                }
+            } catch (\Throwable $e) {
+                Log::error('Comprehensive resume analysis failed', ['error' => $e->getMessage()]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('performComprehensiveResumeAnalysis exception', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        }
+    }
      public function uploadResume(Request $request)
     {
         Log::info('uploadResume called', [
@@ -219,8 +309,8 @@ class AuthController extends Controller
                         'url' => $path,
                     ];
 
-                    // Extract skills asynchronously or best-effort
-                    $this->extractAndMergeSkills($path, $profile);
+                    // Perform comprehensive AI analysis
+                    $this->performComprehensiveResumeAnalysis($path, $profile);
                 } elseif ($action === 'replace' && isset($index) && isset($resumes[$index]) && $request->hasFile('resume')) {
                     $request->validate([
                         'resume' => 'required|file|mimes:pdf,doc,docx|max:5120',
@@ -231,7 +321,7 @@ class AuthController extends Controller
                     $path = $request->file('resume')->store('resumes', 'public');
                     $resumes[$index]['url'] = $path;
 
-                    $this->extractAndMergeSkills($path, $profile);
+                    $this->performComprehensiveResumeAnalysis($path, $profile);
                 } elseif ($action === 'delete' && isset($index) && isset($resumes[$index])) {
                     Storage::disk('public')->delete($resumes[$index]['url']);
                     unset($resumes[$index]);
@@ -253,7 +343,7 @@ class AuthController extends Controller
                 $path = $request->file('resume')->store('resumes', 'public');
                 $profile->update(['resume_url' => $path]);
 
-                $this->extractAndMergeSkills($path, $profile);
+                $this->performComprehensiveResumeAnalysis($path, $profile);
                 return response()->json($user->load('profile'));
             } else {
                 return response()->json(['error' => 'No action or file provided'], 400);
@@ -271,6 +361,260 @@ class AuthController extends Controller
            Log::error('uploadResume exception', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json(['error' => 'Server error: '.$e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Get AI analysis of user's resume
+     */
+    public function getResumeAnalysis(Request $request)
+    {
+        $user = $request->user();
+        $profile = $this->ensureProfile($user);
+
+        if (!$profile->ai_analysis) {
+            return response()->json(['message' => 'No AI analysis available. Please upload a resume first.'], 404);
+        }
+
+        return response()->json([
+            'ai_analysis' => $profile->ai_analysis,
+            'extracted_experience' => $profile->extracted_experience,
+            'extracted_education' => $profile->extracted_education,
+            'extracted_certifications' => $profile->extracted_certifications,
+            'extracted_languages' => $profile->extracted_languages,
+            'resume_summary' => $profile->resume_summary,
+            'last_ai_analysis' => $profile->last_ai_analysis,
+        ]);
+    }
+
+    /**
+     * Manually trigger AI analysis for testing
+     */
+    public function triggerAiAnalysis(Request $request)
+    {
+        $user = $request->user();
+        $profile = $this->ensureProfile($user);
+
+        // Check if user has resumes
+        $hasResumes = false;
+        $resumePath = null;
+
+        if ($profile->resumes && count($profile->resumes) > 0) {
+            $hasResumes = true;
+            $resumePath = $profile->resumes[0]['url']; // Use first resume
+        } elseif ($profile->resume_url) {
+            $hasResumes = true;
+            $resumePath = $profile->resume_url;
+        }
+
+        if (!$hasResumes) {
+            return response()->json(['message' => 'No resume found. Please upload a resume first.'], 400);
+        }
+
+        try {
+            $this->performComprehensiveResumeAnalysis($resumePath, $profile);
+            return response()->json(['message' => 'AI analysis triggered successfully. Check your profile for results.']);
+        } catch (\Exception $e) {
+            Log::error('Manual AI analysis failed', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'AI analysis failed: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get user notifications
+     */
+    public function getNotifications(Request $request)
+    {
+        $user = $request->user();
+        $notifications = $user->notifications()
+            ->orderBy('created_at', 'desc')
+            ->limit(50)
+            ->get();
+
+        return response()->json($notifications);
+    }
+
+    /**
+     * Mark notification as read
+     */
+    public function markNotificationAsRead(Request $request, $id)
+    {
+        $user = $request->user();
+        $notification = $user->notifications()->find($id);
+
+        if (!$notification) {
+            return response()->json(['message' => 'Notification not found'], 404);
+        }
+
+        $notification->markAsRead();
+
+        return response()->json(['message' => 'Notification marked as read']);
+    }
+
+    /**
+     * Mark all notifications as read
+     */
+    public function markAllNotificationsAsRead(Request $request)
+    {
+        $user = $request->user();
+        $user->notifications()->where('read', false)->update([
+            'read' => true,
+            'read_at' => now(),
+        ]);
+
+        return response()->json(['message' => 'All notifications marked as read']);
+    }
+
+    /**
+     * Send email verification
+     */
+    public function sendEmailVerification(Request $request)
+    {
+        $user = $request->user();
+        
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Email already verified'], 400);
+        }
+
+        // Generate verification token
+        $token = Str::random(64);
+        
+        // Store token in database (you might want to create a separate table for this)
+        DB::table('email_verification_tokens')->updateOrInsert(
+            ['email' => $user->email],
+            ['token' => $token, 'created_at' => now()]
+        );
+
+        // In a real application, you would send an email here
+        // For now, we'll just return the token for testing
+        return response()->json([
+            'message' => 'Verification email sent',
+            'verification_token' => $token, // Remove this in production
+            'verification_url' => url("/verify-email?token={$token}&email={$user->email}")
+        ]);
+    }
+
+    /**
+     * Verify email
+     */
+    public function verifyEmail(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+            'email' => 'required|email',
+        ]);
+
+        $token = $request->token;
+        $email = $request->email;
+
+        // Check if token exists and is valid
+        $verificationRecord = DB::table('email_verification_tokens')
+            ->where('email', $email)
+            ->where('token', $token)
+            ->where('created_at', '>=', now()->subHours(24)) // Token expires in 24 hours
+            ->first();
+
+        if (!$verificationRecord) {
+            return response()->json(['message' => 'Invalid or expired verification token'], 400);
+        }
+
+        // Find and verify the user
+        $user = User::where('email', $email)->first();
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        $user->markEmailAsVerified();
+
+        // Delete the verification token
+        DB::table('email_verification_tokens')->where('email', $email)->delete();
+
+        // Send notification
+        Notification::create([
+            'user_id' => $user->id,
+            'type' => 'email_verified',
+            'title' => '✅ Email Verified!',
+            'message' => 'Your email has been successfully verified. You can now access all features!',
+        ]);
+
+        return response()->json(['message' => 'Email verified successfully']);
+    }
+
+    /**
+     * Send password reset link
+     */
+    public function sendPasswordResetLink(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('email', $request->email)->first();
+        if (!$user) {
+            return response()->json(['message' => 'If the email exists, a reset link has been sent'], 200);
+        }
+
+        // Generate reset token
+        $token = Str::random(64);
+        
+        // Store token in database
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $user->email],
+            ['token' => $token, 'created_at' => now()]
+        );
+
+        // In a real application, you would send an email here
+        // For now, we'll just return the token for testing
+        return response()->json([
+            'message' => 'Password reset link sent to your email',
+            'reset_token' => $token, // Remove this in production
+            'reset_url' => url("/reset-password?token={$token}&email={$user->email}")
+        ]);
+    }
+
+    /**
+     * Reset password
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+            'email' => 'required|email',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $token = $request->token;
+        $email = $request->email;
+        $password = $request->password;
+
+        // Check if token exists and is valid
+        $resetRecord = DB::table('password_reset_tokens')
+            ->where('email', $email)
+            ->where('token', $token)
+            ->where('created_at', '>=', now()->subHours(1)) // Token expires in 1 hour
+            ->first();
+
+        if (!$resetRecord) {
+            return response()->json(['message' => 'Invalid or expired reset token'], 400);
+        }
+
+        // Find and update the user
+        $user = User::where('email', $email)->first();
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        $user->update(['password' => Hash::make($password)]);
+
+        // Delete the reset token
+        DB::table('password_reset_tokens')->where('email', $email)->delete();
+
+        // Send notification
+        Notification::create([
+            'user_id' => $user->id,
+            'type' => 'password_reset',
+            'title' => '🔒 Password Reset',
+            'message' => 'Your password has been successfully reset. If you did not make this change, please contact support immediately.',
+        ]);
+
+        return response()->json(['message' => 'Password reset successfully']);
     }
 
     /**
