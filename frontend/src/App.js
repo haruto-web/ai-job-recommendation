@@ -12,7 +12,7 @@ import Account from './pages/Account';
 import Dashboard from './pages/Dashboard';
 import './App.css';
 
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);

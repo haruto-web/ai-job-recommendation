@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import NotificationBell from './NotificationBell';
 import './Navigation.css';
 
 function Navigation({ isLoggedIn, onLogin, onRegister, onLogout }) {
@@ -72,6 +73,7 @@ function Navigation({ isLoggedIn, onLogin, onRegister, onLogout }) {
         <div className="nav-auth">
           {isLoggedIn ? (
             <div className="user-menu">
+              <NotificationBell isLoggedIn={isLoggedIn} />
               <button onClick={onLogout} className="logout-btn">
                 Sign Out
               </button>

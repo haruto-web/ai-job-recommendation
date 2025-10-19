@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
 
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 function Dashboard() {
   const [dashboardData, setDashboardData] = useState(null);
@@ -302,12 +302,105 @@ function Dashboard() {
               {dashboardData.applications.length > 0 ? (
                 <div className="applications-list">
                   {dashboardData.applications.map(app => (
-                    <div key={app.id} className="application-card">
-                      <h3>{app.job.title}</h3>
-                      <p>Applicant: {app.user.name}</p>
-                      <p>Status: {app.status}</p>
-                      <button className="action-btn" onClick={() => handleApplicationAction(app.id, 'accepted')}>Accept</button>
-                      <button className="action-btn reject" onClick={() => handleApplicationAction(app.id, 'rejected')}>Reject</button>
+                    <div key={app.id} className="application-card enhanced">
+                      <div className="application-header">
+                        <h3>{app.job.title}</h3>
+                        <span className={`status-badge ${app.status}`}>{app.status}</span>
+                      </div>
+                      
+                      <div className="applicant-info">
+                        <h4>👤 Applicant: {app.user.name}</h4>
+                        <p>📧 Email: {app.user.email}</p>
+                        
+                        {/* Resume Information */}
+                        {app.user.profile && (
+                          <div className="resume-section">
+                            <h5>📄 Resume & Profile</h5>
+                            {app.user.profile.resumes && app.user.profile.resumes.length > 0 ? (
+                              <div className="resume-links">
+                                {app.user.profile.resumes.map((resume, index) => (
+                                  <a 
+                                    key={index} 
+                                    href={`${API_URL}/storage/${resume.url}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="resume-link"
+                                  >
+                                    📎 {resume.name}
+                                  </a>
+                                ))}
+                              </div>
+                            ) : app.user.profile.resume_url ? (
+                              <a 
+                                href={`${API_URL}/storage/${app.user.profile.resume_url}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="resume-link"
+                              >
+                                📎 View Resume
+                              </a>
+                            ) : (
+                              <p className="no-resume">No resume uploaded</p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* AI Analysis Information */}
+                        {app.user.profile && app.user.profile.ai_analysis && (
+                          <div className="ai-analysis-section">
+                            <h5>🤖 AI Analysis</h5>
+                            <div className="ai-details">
+                              {app.user.profile.resume_summary && (
+                                <div className="ai-item">
+                                  <strong>Summary:</strong>
+                                  <p>{app.user.profile.resume_summary}</p>
+                                </div>
+                              )}
+                              {app.user.profile.extracted_experience && (
+                                <div className="ai-item">
+                                  <strong>Experience:</strong>
+                                  <span>{app.user.profile.extracted_experience}</span>
+                                </div>
+                              )}
+                              {app.user.profile.skills && app.user.profile.skills.length > 0 && (
+                                <div className="ai-item">
+                                  <strong>Skills:</strong>
+                                  <div className="skills-tags">
+                                    {app.user.profile.skills.map((skill, index) => (
+                                      <span key={index} className="skill-tag">{skill}</span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Cover Letter */}
+                        {app.cover_letter && (
+                          <div className="cover-letter-section">
+                            <h5>💌 Cover Letter</h5>
+                            <div className="cover-letter-content">
+                              {app.cover_letter}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="application-actions">
+                        <button 
+                          className="action-btn accept" 
+                          onClick={() => handleApplicationAction(app.id, 'accepted')}
+                        >
+                          ✅ Accept
+                        </button>
+                        <button 
+                          className="action-btn reject" 
+                          onClick={() => handleApplicationAction(app.id, 'rejected')}
+                        >
+                          ❌ Reject
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
