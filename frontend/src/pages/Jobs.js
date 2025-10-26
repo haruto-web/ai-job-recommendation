@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import SearchBar from '../components/SearchBar';
 import './Jobs.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
@@ -73,6 +74,13 @@ function Jobs() {
   }, []);
 
   const handleApply = async (jobId) => {
+    // Check if user has a resume before applying
+    const hasResume = user && user.profile && (user.profile.resumes?.length > 0 || user.profile.resume_url);
+    if (!hasResume) {
+      alert('Please upload a resume before applying for jobs.');
+      return;
+    }
+
     setApplying(jobId);
     try {
       const token = localStorage.getItem('token');
@@ -209,6 +217,7 @@ function Jobs() {
       <section className="jobs-hero">
         <h1>Find Your Perfect Job</h1>
         <p>Explore personalized job recommendations powered by AI technology.</p>
+        <SearchBar />
       </section>
 
       <section className="jobs-content">

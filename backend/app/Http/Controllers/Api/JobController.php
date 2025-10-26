@@ -89,6 +89,7 @@ class JobController extends Controller
             'type' => 'string|in:full-time,part-time,contract',
             'salary' => 'numeric|min:0',
             'requirements' => 'array',
+            'urgent' => 'boolean',
         ]);
 
         $user = Auth::user();
@@ -125,6 +126,7 @@ class JobController extends Controller
             'type' => 'string|in:full-time,part-time,contract',
             'salary' => 'numeric|min:0',
             'requirements' => 'array',
+            'urgent' => 'boolean',
         ]);
 
         $job->update($validated);
@@ -147,6 +149,29 @@ class JobController extends Controller
 
         $job->delete();
         return response()->json(['message' => 'Job deleted']);
+    }
+
+    public function search(Request $request)
+    {
+        $query = $request->input('q', '');
+        if (empty($query)) {
+            return response()->json(['jobs' => []]);
+        }
+
+        $jobs = Job::where('title', 'like', '%' . $query . '%')
+            ->orWhere('description', 'like', '%' . $query . '%')
+            ->orWhere('company', 'like', '%' . $query . '%')
+            ->orWhere('location', 'like', '%' . $query . '%')
+            ->limit(20)
+            ->get();
+
+        return response()->json(['jobs' => $jobs]);
+    }
+
+    public function urgentJobs()
+    {
+        $urgentJobs = Job::where('urgent', true)->get();
+        return response()->json($urgentJobs);
     }
 
     /**

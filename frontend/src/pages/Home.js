@@ -1,8 +1,81 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
+import SearchBar from '../components/SearchBar';
 import './Home.css';
 
 function Home() {
+  const [urgentJobs, setUrgentJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [applying, setApplying] = useState(null);
+  const [user, setUser] = useState(null);
+
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+
+  useEffect(() => {
+    const fetchUrgentJobs = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/urgent-jobs`);
+        setUrgentJobs(response.data);
+      } catch (error) {
+        console.error('Failed to fetch urgent jobs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const response = await axios.get(`${API_URL}/user`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setUser(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      }
+    };
+
+    fetchUrgentJobs();
+    fetchUser();
+  }, []);
+
+  const handleApply = async (jobId) => {
+    if (!user || user.user_type !== 'jobseeker') {
+      alert('Only job seekers can apply for jobs.');
+      return;
+    }
+
+    // Check if user has a resume before applying
+    const hasResume = user.profile && (user.profile.resumes?.length > 0 || user.profile.resume_url);
+    if (!hasResume) {
+      alert('Please upload a resume before applying for jobs.');
+      return;
+    }
+
+    setApplying(jobId);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_URL}/applications`, { job_id: jobId }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('Application submitted successfully!');
+      // Remove the job from urgent jobs list after successful application
+      setUrgentJobs(prev => prev.filter(job => job.id !== jobId));
+    } catch (error) {
+      console.error('Failed to apply:', error);
+      if (error.response && error.response.status === 409) {
+        alert('You have already applied for this job.');
+      } else {
+        alert('Failed to apply for the job. Please try again.');
+      }
+    } finally {
+      setApplying(null);
+    }
+  };
+
   return (
     <div className="home-container">
       {/* Hero Section */}
@@ -47,6 +120,17 @@ function Home() {
         </div>
       </section>
 
+      {/* Search Section */}
+      <section className="search-section">
+        <div className="container">
+          <div className="section-header">
+            <h2>Search Jobs & Users</h2>
+            <p>Find the perfect job or connect with the right people.</p>
+          </div>
+          <SearchBar />
+        </div>
+      </section>
+
       {/* Features Section */}
       <section className="features-section">
         <div className="container">
@@ -82,6 +166,48 @@ function Home() {
           </div>
         </div>
       </section>
+
+      {/* Urgent Jobs Section */}
+      {!loading && urgentJobs.length > 0 && (
+        <section className="urgent-jobs-section">
+          <div className="container">
+            <div className="section-header">
+              <h2>🚨 Urgent Job Openings</h2>
+              <p>These positions need immediate attention! Apply now to secure your spot.</p>
+            </div>
+
+            <div className="urgent-jobs-grid">
+              {urgentJobs.map(job => (
+                <div key={job.id} className="urgent-job-card">
+                  <div className="urgent-badge">URGENT</div>
+                  <h3>{job.title}</h3>
+                  <p className="company">{job.company} - {job.location}</p>
+                  <p className="type">{job.type}</p>
+                  {job.salary && <p className="salary">${job.salary}</p>}
+                  <p className="description">{job.description.substring(0, 150)}...</p>
+                  {user && user.user_type === 'jobseeker' && (
+                    <button
+                      onClick={() => handleApply(job.id)}
+                      disabled={applying === job.id}
+                      className="apply-urgent-btn"
+                    >
+                      {applying === job.id ? 'Applying...' : 'Apply Now'}
+                    </button>
+                  )}
+                  {!user && (
+                    <Link to="/login" className="login-to-apply-btn">
+                      Login to Apply
+                    </Link>
+                  )}
+                  {user && user.user_type === 'employer' && (
+                    <p className="employer-note">Only job seekers can apply for jobs.</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA Section */}
       <section className="cta-section">

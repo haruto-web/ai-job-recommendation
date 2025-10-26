@@ -375,6 +375,156 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
+/* Urgent Jobs Section */
+.urgent-jobs-section {
+  padding: 60px 0;
+  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+  border-top: 2px solid #f44336;
+  border-bottom: 2px solid #f44336;
+}
+
+.urgent-jobs-section .section-header h2 {
+  color: #d32f2f;
+  font-size: 2.5rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.urgent-jobs-section .section-header p {
+  text-align: center;
+  color: #b71c1c;
+  font-size: 1.2rem;
+  margin-bottom: 40px;
+}
+
+.urgent-jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.urgent-job-card {
+  background: white;
+  border-radius: 15px;
+  padding: 25px;
+  box-shadow: 0 8px 25px rgba(244, 67, 54, 0.15);
+  border: 2px solid #f44336;
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.urgent-job-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 35px rgba(244, 67, 54, 0.25);
+}
+
+.urgent-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: #f44336;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 10px rgba(244, 67, 54, 0.3);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.urgent-job-card h3 {
+  color: #d32f2f;
+  font-size: 1.4rem;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.urgent-job-card .company {
+  color: #666;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.urgent-job-card .type {
+  color: #888;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.urgent-job-card .salary {
+  color: #2e7d32;
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+}
+
+.urgent-job-card .description {
+  color: #555;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.apply-urgent-btn {
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  font-size: 1rem;
+}
+
+.apply-urgent-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(244, 67, 54, 0.4);
+}
+
+.apply-urgent-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.login-to-apply-btn {
+  display: inline-block;
+  background: #2196f3;
+  color: white;
+  padding: 12px 25px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+  text-align: center;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.login-to-apply-btn:hover {
+  background: #1976d2;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(33, 150, 243, 0.4);
+}
+
+.employer-note {
+  color: #666;
+  font-style: italic;
+  text-align: center;
+  margin-top: 10px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .hero-content {
@@ -382,47 +532,60 @@
     gap: 2rem;
     text-align: center;
   }
-  
+
   .hero-title {
     font-size: 2.5rem;
   }
-  
+
   .hero-subtitle {
     font-size: 1.125rem;
   }
-  
+
   .hero-actions {
     justify-content: center;
   }
-  
+
   .hero-visual {
     height: 300px;
   }
-  
+
   .floating-card {
     padding: 1rem;
   }
-  
+
   .section-header h2 {
     font-size: 2rem;
   }
-  
+
   .features-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .cta-content h2 {
     font-size: 2rem;
   }
-  
+
   .footer-content {
     grid-template-columns: 1fr;
     gap: 2rem;
   }
-  
+
   .footer-links {
     grid-template-columns: 1fr;
     gap: 1.5rem;
+  }
+
+  .urgent-jobs-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .urgent-jobs-section .section-header h2 {
+    font-size: 2rem;
+  }
+
+  .urgent-job-card {
+    padding: 20px;
   }
 }
 
@@ -430,12 +593,12 @@
   .hero-title {
     font-size: 2rem;
   }
-  
+
   .hero-actions {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .btn-primary, .btn-secondary, .btn-outline {
     width: 100%;
     max-width: 280px;

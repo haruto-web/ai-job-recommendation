@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import SearchBar from '../components/SearchBar';
 import './Dashboard.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
@@ -39,6 +40,20 @@ function Dashboard() {
   const [chatLoading, setChatLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [applying, setApplying] = useState(null);
+
+  const handleToggleUrgent = async (jobId, currentUrgent) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${API_URL}/jobs/${jobId}`, { urgent: !currentUrgent }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert(`Job ${!currentUrgent ? 'marked as' : 'removed from'} urgent successfully!`);
+      fetchDashboard(); // Refresh dashboard data
+    } catch (error) {
+      console.error('Failed to toggle urgent:', error);
+      alert('Failed to update job. Please try again.');
+    }
+  };
 
   const fetchDashboard = async () => {
     try {
@@ -274,6 +289,7 @@ function Dashboard() {
       <section className="dashboard-hero">
         <h1>Dashboard</h1>
         <p>Welcome back! Here's your overview.</p>
+        <SearchBar />
       </section>
 
       <section className="dashboard-content">
@@ -428,6 +444,16 @@ function Dashboard() {
                     onChange={handleJobFormChange}
                   />
                 </div>
+                <div className="form-group">
+                  <label htmlFor="urgent">Mark as Urgent</label>
+                  <input
+                    type="checkbox"
+                    id="urgent"
+                    name="urgent"
+                    checked={jobForm.urgent}
+                    onChange={(e) => setJobForm(prev => ({ ...prev, urgent: e.target.checked }))}
+                  />
+                </div>
                 <button type="submit" disabled={creatingJob} className="create-job-btn">
                   {creatingJob ? 'Creating...' : 'Create Job'}
                 </button>
@@ -443,6 +469,13 @@ function Dashboard() {
                     <div key={job.id} className="job-card">
                       <h3>{job.title}</h3>
                       <p>Applications: {job.applications ? job.applications.length : 0}</p>
+                      <p>Status: {job.urgent ? '🔥 Urgent' : 'Normal'}</p>
+                      <button
+                        onClick={() => handleToggleUrgent(job.id, job.urgent)}
+                        className="urgent-toggle-btn"
+                      >
+                        {job.urgent ? 'Remove Urgent' : 'Mark as Urgent'}
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -878,6 +911,12 @@ function Dashboard() {
                             // Navigate to job search/detail fallback
                             alert('Job detail not available. Redirecting to jobs list.');
                             navigate('/jobs');
+                            return;
+                          }
+                          // Check if user has a resume before applying
+                          const hasResume = dashboardData.profile && (dashboardData.profile.resumes?.length > 0 || dashboardData.profile.resume_url);
+                          if (!hasResume) {
+                            alert('Please upload a resume before applying for jobs.');
                             return;
                           }
                           setApplying(jobId);
