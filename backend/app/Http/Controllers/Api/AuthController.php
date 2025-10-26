@@ -138,6 +138,7 @@ class AuthController extends Controller
             'skills' => 'nullable|array',
             'experience_level' => 'nullable|in:entry,mid,senior,expert',
             'portfolio_url' => 'nullable|url',
+            'education_attainment' => 'nullable|in:high_school,associate,bachelor,master,phd',
         ]);
 
         $user = $request->user();
@@ -150,7 +151,7 @@ class AuthController extends Controller
             $profile = $this->ensureProfile($user);
         }
 
-        $profile->update($request->only(['bio', 'skills', 'experience_level', 'portfolio_url']));
+        $profile->update($request->only(['bio', 'skills', 'experience_level', 'portfolio_url', 'education_attainment']));
 
         return response()->json($user->load('profile'));
     }
@@ -237,12 +238,12 @@ class AuthController extends Controller
                         $analysis = $openai->analyzeResumeComprehensively($resumeText);
 
                         if ($analysis) {
-                            
+
                         }
                     } catch (\Throwable $e) {
                         Log::error('Comprehensive resume analysis failed at instantiation or call', ['error' => $e->getMessage()]);
                     }
-                    
+
                     if (! empty($analysis)) {
                         // Update profile with AI analysis results
                         $updateData = [

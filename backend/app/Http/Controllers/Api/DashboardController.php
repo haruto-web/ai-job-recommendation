@@ -24,6 +24,8 @@ class DashboardController extends Controller
             return $this->jobseekerDashboard($user);
         } elseif ($user->user_type === 'employer') {
             return $this->employerDashboard($user);
+        } elseif ($user->user_type === 'admin') {
+            return $this->adminDashboard($user);
         }
 
         return response()->json(['message' => 'Invalid user type'], 400);
@@ -119,6 +121,108 @@ class DashboardController extends Controller
             'total_spent' => $totalSpent,
             'active_jobs' => $jobs->count(),
             'total_applications' => $applications->count(),
+        ]);
+    }
+
+    private function adminDashboard(User $user)
+    {
+        // User statistics
+        $totalUsers = User::count();
+        $jobseekers = User::where('user_type', 'jobseeker')->count();
+        $employers = User::where('user_type', 'employer')->count();
+        $admins = User::where('user_type', 'admin')->count();
+
+        // Job statistics
+        $totalJobs = Job::count();
+        $urgentJobs = Job::where('urgent', true)->count();
+
+        // Application statistics
+        $totalApplications = Application::count();
+        $pendingApplications = Application::where('status', 'pending')->count();
+        $acceptedApplications = Application::where('status', 'accepted')->count();
+        $rejectedApplications = Application::where('status', 'rejected')->count();
+
+        // Payment statistics
+        $totalPayments = Payment::count();
+        $totalPaymentAmount = Payment::sum('amount');
+
+        // Recent users
+        $recentUsers = User::with('profile')
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'user_type' => $user->user_type,
+                    'created_at' => $user->created_at->format('Y-m-d H:i:s'),
+                ];
+            });
+
+        // Recent jobs
+        $recentJobs = Job::with('user')
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get()
+            ->map(function ($job) {
+                return [
+                    'id' => $job->id,
+                    'title' => $job->title,
+                    'company' => $job->company,
+                    'user' => $job->user ? $job->user->name : 'Unknown',
+                    'urgent' => $job->urgent,
+                    'created_at' => $job->created_at->format('Y-m-d H:i:s'),
+                ];
+            });
+
+        // Recent applications
+        $recentApplications = Application::with(['user', 'job'])
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get()
+            ->map(function ($app) {
+                return [
+                    'id' => $app->id,
+                    'job_title' => $app->job->title,
+                    'user_name' => $app->user->name,
+                    'status' => $app->status,
+                    'created_at' => $app->created_at->format('Y-m-d H:i:s'),
+                ];
+            });
+
+        return response()->json([
+            'user_type' => 'admin',
+            'summary' => [
+                'total_users' => $totalUsers,
+                'jobseekers' => $jobseekers,
+                'employers' => $employers,
+                'admins' => $admins,
+                'total_jobs' => $totalJobs,
+                'urgent_jobs' => $urgentJobs,
+                'total_applications' => $totalApplications,
+                'pending_applications' => $pendingApplications,
+                'accepted_applications' => $acceptedApplications,
+                'rejected_applications' => $rejectedApplications,
+                'total_payments' => $totalPayments,
+                'total_payment_amount' => $totalPaymentAmount,
+            ],
+            'graphs' => [
+                'user_types' => [
+                    'jobseeker' => $jobseekers,
+                    'employer' => $employers,
+                    'admin' => $admins,
+                ],
+                'application_status' => [
+                    'pending' => $pendingApplications,
+                    'accepted' => $acceptedApplications,
+                    'rejected' => $rejectedApplications,
+                ],
+            ],
+            'recent_users' => $recentUsers,
+            'recent_jobs' => $recentJobs,
+            'recent_applications' => $recentApplications,
         ]);
     }
 }

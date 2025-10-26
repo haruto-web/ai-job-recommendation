@@ -12,8 +12,7 @@ function Account({ isLoggedIn }) {
   const [profileData, setProfileData] = useState({
     bio: '',
     skills: [],
-    experience_level: '',
-    portfolio_url: ''
+    education_attainment: ''
   });
   const [editingProfile, setEditingProfile] = useState(false);
   // AI analysis and resume management moved to the Dashboard page
@@ -32,8 +31,7 @@ function Account({ isLoggedIn }) {
             setProfileData({
               bio: response.data.profile.bio || '',
               skills: response.data.profile.skills || [],
-              experience_level: response.data.profile.experience_level || '',
-              portfolio_url: response.data.profile.portfolio_url || ''
+              education_attainment: response.data.profile.education_attainment || ''
             });
           }
         } catch (error) {
@@ -226,26 +224,20 @@ function Account({ isLoggedIn }) {
                       type="text"
                       value={profileData.skills.join(', ')}
                       onChange={(e) => setProfileData({ ...profileData, skills: e.target.value.split(',').map(s => s.trim()) })}
-                      placeholder="e.g., JavaScript, React, Node.js"
+                      placeholder="Skills that you have"
                     />
-                    <label>Experience Level:</label>
+                    <label>Education Attainment:</label>
                     <select
-                      value={profileData.experience_level}
-                      onChange={(e) => setProfileData({ ...profileData, experience_level: e.target.value })}
+                      value={profileData.education_attainment}
+                      onChange={(e) => setProfileData({ ...profileData, education_attainment: e.target.value })}
                     >
-                      <option value="">Select experience level</option>
-                      <option value="entry">Entry Level</option>
-                      <option value="mid">Mid Level</option>
-                      <option value="senior">Senior Level</option>
-                      <option value="expert">Expert</option>
+                      <option value="">Select education level</option>
+                      <option value="high_school">High School</option>
+                      <option value="associate">Associate Degree</option>
+                      <option value="bachelor">Bachelor's Degree</option>
+                      <option value="master">Master's Degree</option>
+                      <option value="phd">PhD</option>
                     </select>
-                    <label>Portfolio URL:</label>
-                    <input
-                      type="url"
-                      value={profileData.portfolio_url}
-                      onChange={(e) => setProfileData({ ...profileData, portfolio_url: e.target.value })}
-                      placeholder="https://yourportfolio.com"
-                    />
                     <div className="form-buttons">
                       <button onClick={handleSaveProfile} className="save-btn">Save</button>
                       <button onClick={() => setEditingProfile(false)} className="cancel-btn">Cancel</button>
@@ -259,8 +251,7 @@ function Account({ isLoggedIn }) {
                         {user.profile.skills && user.profile.skills.length > 0 && (
                           <p><strong>Skills:</strong> {user.profile.skills.join(', ')}</p>
                         )}
-                        {user.profile.experience_level && <p><strong>Experience Level:</strong> {user.profile.experience_level}</p>}
-                        {user.profile.portfolio_url && <p><strong>Portfolio:</strong> <a href={user.profile.portfolio_url} target="_blank" rel="noopener noreferrer">{user.profile.portfolio_url}</a></p>}
+                        {user.profile.education_attainment && <p><strong>Education Attainment:</strong> {user.profile.education_attainment}</p>}
                         <div>
                           <strong>Resumes:</strong>
                           {user.profile.resumes && user.profile.resumes.length > 0 ? (
@@ -278,7 +269,7 @@ function Account({ isLoggedIn }) {
                             <p>No resumes uploaded yet. Go to the <a href="/jobs">Jobs</a> page to manage your resumes.</p>
                           )}
                         </div>
-                        
+
 
                       </div>
                     ) : (

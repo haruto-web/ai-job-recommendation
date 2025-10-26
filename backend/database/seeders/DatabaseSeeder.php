@@ -7,6 +7,7 @@ use App\Models\Job;
 use App\Models\Application;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -261,6 +262,14 @@ class DatabaseSeeder extends Seeder
             'user_id' => $jobseeker->id,
             'job_id' => $sampleJobs->last()->id,
             'status' => 'accepted',
+        ]);
+
+        // Create admin user
+        User::create([
+            'name' => 'Admin User',
+            'email' => 'admin@gmail.com',
+            'password' => Hash::make('admin12345678'),
+            'user_type' => 'admin',
         ]);
     }
 }

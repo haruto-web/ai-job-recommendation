@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import NotificationBell from './NotificationBell';
 import './Navigation.css';
 
-function Navigation({ isLoggedIn, onLogin, onRegister, onLogout }) {
+function Navigation({ isLoggedIn, onLogin, onRegister, onLogout, userType }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
 
@@ -45,7 +45,7 @@ function Navigation({ isLoggedIn, onLogin, onRegister, onLogout }) {
             About
           </Link>
           
-          {isLoggedIn && (
+          {isLoggedIn && userType !== 'admin' && (
             <>
               <Link 
                 to="/jobs" 
@@ -53,11 +53,28 @@ function Navigation({ isLoggedIn, onLogin, onRegister, onLogout }) {
               >
                 Jobs
               </Link>
-              <Link 
-                to="/dashboard" 
+              <Link
+                to="/dashboard"
                 className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}
               >
                 Dashboard
+              </Link>
+              <Link 
+                to="/account" 
+                className={`nav-link ${isActive('/account') ? 'active' : ''}`}
+              >
+                Account
+              </Link>
+            </>
+          )}
+
+          {isLoggedIn && userType === 'admin' && (
+            <>
+              <Link
+                to="/admin"
+                className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
+              >
+                Admin Dashboard
               </Link>
               <Link 
                 to="/account" 
@@ -122,7 +139,7 @@ function Navigation({ isLoggedIn, onLogin, onRegister, onLogout }) {
             About
           </Link>
           
-          {isLoggedIn ? (
+          {isLoggedIn && userType !== 'admin' && (
             <>
               <Link 
                 to="/jobs" 
@@ -131,8 +148,8 @@ function Navigation({ isLoggedIn, onLogin, onRegister, onLogout }) {
               >
                 Jobs
               </Link>
-              <Link 
-                to="/dashboard" 
+              <Link
+                to="/dashboard"
                 className={`mobile-nav-link ${isActive('/dashboard') ? 'active' : ''}`}
                 onClick={closeMobileMenu}
               >
@@ -149,7 +166,31 @@ function Navigation({ isLoggedIn, onLogin, onRegister, onLogout }) {
                 Sign Out
               </button>
             </>
-          ) : (
+          )}
+
+          {isLoggedIn && userType === 'admin' && (
+            <>
+              <Link
+                to="/admin"
+                className={`mobile-nav-link ${isActive('/admin') ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                Admin Dashboard
+              </Link>
+              <Link 
+                to="/account" 
+                className={`mobile-nav-link ${isActive('/account') ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                Account
+              </Link>
+              <button onClick={() => { onLogout(); closeMobileMenu(); }} className="mobile-logout-btn">
+                Sign Out
+              </button>
+            </>
+          )}
+
+          {!isLoggedIn && (
             <>
               <Link 
                 to="/login" 

@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\StorageController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\AdminController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -56,4 +57,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('payments', [PaymentController::class, 'index']);
     Route::post('payments', [PaymentController::class, 'store']);
     Route::post('manage-money', [PaymentController::class, 'manageMoney']);
+
+    // Admin routes (only for admin users)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('admin/users', [AdminController::class, 'getUsers']);
+        Route::put('admin/users/{user}', [AdminController::class, 'updateUser']);
+        Route::delete('admin/users/{user}', [AdminController::class, 'deleteUser']);
+
+        Route::get('admin/jobs', [AdminController::class, 'getJobs']);
+        Route::put('admin/jobs/{job}', [AdminController::class, 'updateJob']);
+        Route::delete('admin/jobs/{job}', [AdminController::class, 'deleteJob']);
+
+        Route::get('admin/applications', [AdminController::class, 'getApplications']);
+        Route::put('admin/applications/{application}', [AdminController::class, 'updateApplication']);
+        Route::delete('admin/applications/{application}', [AdminController::class, 'deleteApplication']);
+
+        Route::get('admin/payments', [AdminController::class, 'getPayments']);
+    });
 });

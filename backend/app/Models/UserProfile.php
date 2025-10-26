@@ -24,6 +24,7 @@ class UserProfile extends Model
         'extracted_languages',
         'resume_summary',
         'last_ai_analysis',
+        'education_attainment',
     ];
 
     protected $casts = [
