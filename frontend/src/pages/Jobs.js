@@ -7,7 +7,6 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 function Jobs() {
   const [jobs, setJobs] = useState([]);
-  const [aiSuggestions, setAiSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(null);
   const [user, setUser] = useState(null);
@@ -34,20 +33,6 @@ function Jobs() {
       try {
         const response = await axios.get(`${API_URL}/jobs`);
         setJobs(response.data);
-        // load any persisted AI suggestions
-        try {
-          const raw = localStorage.getItem('ai_suggestions');
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) {
-              // ensure we only show high-confidence suggestions and with job_id
-              const filtered = parsed.filter(s => (s.confidence ?? 0) >= 80 && (s.job_id || s.job_id === 0 ? true : false));
-              setAiSuggestions(filtered);
-            }
-          }
-        } catch (e) {
-          console.warn('Failed to load AI suggestions from storage', e);
-        }
       } catch (error) {
         console.error('Failed to fetch jobs:', error);
       } finally {
@@ -321,44 +306,26 @@ function Jobs() {
         {user && user.user_type === 'jobseeker' && (
           <div className="jobs-section">
             <h2>Matched Jobs for You</h2>
-            <p>Jobs that match your profile based on our AI analysis.</p>
+            <p>Jobs that match your profile based on our skill analysis.</p>
             <div className="job-cards">
-              {((jobs.filter(job => job.match_score && job.match_score > 0)).length > 0 || aiSuggestions.length > 0) ? (
-                <>
-                  {aiSuggestions.length > 0 && (
-                    <div style={{ marginBottom: '12px' }}>
-                      <h4>AI Suggestions</h4>
-                      {aiSuggestions.map((s, idx) => (
-                        <div key={idx} className="job-card">
-                          <h3>{s.title}</h3>
-                          <p>{s.recommended_level} • {s.confidence}%</p>
-                          <p>{s.description}</p>
-                          <button onClick={() => handleApply(s.job_id || 0)} disabled={applying === s.job_id} className="apply-btn">
-                            {applying === s.job_id ? 'Applying...' : 'Apply'}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {jobs.filter(job => job.match_score && job.match_score > 0).map(job => (
-                    <div key={job.id} className="job-card">
-                      <h3>{job.title}</h3>
-                      <p>{job.company} - {job.location} - {job.type}</p>
-                      {job.salary && <p>Salary: ${job.salary}</p>}
-                      {job.match_score !== undefined && (
-                        <span className="match-score">{job.match_score}% match</span>
-                      )}
-                      <button
-                        onClick={() => handleApply(job.id)}
-                        disabled={applying === job.id}
-                        className="apply-btn"
-                      >
-                        {applying === job.id ? 'Applying...' : 'Apply'}
-                      </button>
-                    </div>
-                  ))}
-                </>
+              {jobs.filter(job => job.match_score && job.match_score > 0).length > 0 ? (
+                jobs.filter(job => job.match_score && job.match_score > 0).map(job => (
+                  <div key={job.id} className="job-card">
+                    <h3>{job.title}</h3>
+                    <p>{job.company} - {job.location} - {job.type}</p>
+                    {job.salary && <p>Salary: ${job.salary}</p>}
+                    {job.match_score !== undefined && (
+                      <span className="match-score">{job.match_score}% match</span>
+                    )}
+                    <button
+                      onClick={() => handleApply(job.id)}
+                      disabled={applying === job.id}
+                      className="apply-btn"
+                    >
+                      {applying === job.id ? 'Applying...' : 'Apply'}
+                    </button>
+                  </div>
+                ))
               ) : (
                 <p>No matched jobs available. Upload a resume to get personalized matches.</p>
               )}

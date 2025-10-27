@@ -19,50 +19,38 @@ class JobController extends Controller
 
         $user = Auth::user();
         if ($user && $user->user_type === 'jobseeker' && $user->profile) {
-            $openai = new OpenAIService();
-            
-            // Use comprehensive AI analysis if available, otherwise fall back to basic skills
-            $userSkills = [];
-            $userExperience = 'entry';
-            $userSummary = '';
-            
-            if ($user->profile->ai_analysis) {
-                $aiAnalysis = $user->profile->ai_analysis;
-                $userSkills = $aiAnalysis['skills'] ?? [];
-                $userExperience = $aiAnalysis['experience_level'] ?? 'entry';
-                $userSummary = $aiAnalysis['summary'] ?? '';
-            } else {
-                $userSkills = $user->profile->skills ?? [];
-                $userExperience = $user->profile->experience_level ?? 'entry';
+            // Use local skill matching instead of AI
+            $userSkills = $user->profile->skills ?? [];
+            if ($user->profile->ai_analysis && isset($user->profile->ai_analysis['skills']) && !empty($user->profile->ai_analysis['skills'])) {
+                $userSkills = array_merge($userSkills, $user->profile->ai_analysis['skills']);
             }
+            $userSkills = array_unique($userSkills);
 
+            $skillsLower = array_map(fn($s) => strtolower($s), $userSkills);
             $highMatchJobs = [];
 
             foreach ($jobs as $job) {
-                $jobDescription = $job->title . ' ' . $job->description . ' ' . implode(' ', $job->requirements ?? []);
-                
-                // Enhanced matching with AI analysis
-                $matchData = [
-                    'skills' => $userSkills,
-                    'experience' => $userExperience,
-                    'summary' => $userSummary
-                ];
-                
-                $match = $openai->matchJobToUser($jobDescription, $userSkills, $userExperience);
-                $job->match_score = $match['match_score'] ?? 0;
-                $job->match_reasoning = $match['reasoning'] ?? '';
-                
+                $text = strtolower($job->title . ' ' . ($job->description ?? '') . ' ' . ($job->requirements ? json_encode($job->requirements) : ''));
+                $matchCount = 0;
+                foreach ($skillsLower as $skill) {
+                    if ($skill === '') continue;
+                    if (str_contains($text, $skill)) $matchCount++;
+                }
+                $matchScore = $matchCount > 0 ? min(100, (int) floor(($matchCount / max(1, count($skillsLower))) * 100)) : 0;
+
+                $job->match_score = $matchScore;
+
                 // Track high match jobs for notifications
-                if ($job->match_score >= 75) {
+                if ($matchScore >= 75) {
                     $highMatchJobs[] = $job;
                 }
             }
 
             // Sort by match score descending
             $jobs = $jobs->sortByDesc('match_score')->values();
-            
-            // Send notification for high match jobs (only if user has AI analysis)
-            if (!empty($highMatchJobs) && $user->profile->ai_analysis) {
+
+            // Send notification for high match jobs
+            if (!empty($highMatchJobs)) {
                 $this->notifyHighMatchJobs($user, $highMatchJobs);
             }
         }

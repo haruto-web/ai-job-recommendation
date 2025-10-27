@@ -26,8 +26,8 @@
   position: fixed;
   bottom: 90px;
   right: 20px;
-  width: 350px;
-  height: 500px;
+  width: 400px;
+  height: 600px;
   background: white;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
@@ -140,9 +140,15 @@
   }
 }
 
-.chatbot-input {
+.chatbot-input-section {
   padding: 16px;
   border-top: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chatbot-input {
   display: flex;
   gap: 8px;
   align-items: flex-end;
@@ -183,6 +189,99 @@
 }
 
 .send-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.chatbot-skills {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.chatbot-skills input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 14px;
+  outline: none;
+}
+
+.chatbot-skills input:focus {
+  border-color: #007bff;
+}
+
+.skills-button {
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #28a745, #1e7e34);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.skills-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.skills-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.chatbot-resume {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.chatbot-resume input[type="file"] {
+  display: none;
+}
+
+.file-label {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  background: #f8f9fa;
+  color: #666;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.file-label:hover {
+  border-color: #007bff;
+  background: #e9ecef;
+}
+
+.upload-button {
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #ffc107, #e0a800);
+  color: #212529;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.upload-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+}
+
+.upload-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }

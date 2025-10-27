@@ -56,6 +56,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // AI conversational chat
     Route::post('ai/chat', [\App\Http\Controllers\Api\AiController::class, 'chat']);
 
+    // AI resume analysis in chat
+    Route::post('ai/chat-resume', [\App\Http\Controllers\Api\AiController::class, 'chatResume']);
+
     // Payments
     Route::get('payments', [PaymentController::class, 'index']);
     Route::post('payments', [PaymentController::class, 'store']);
