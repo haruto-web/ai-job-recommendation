@@ -11,6 +11,7 @@ import Jobs from './pages/Jobs';
 import Account from './pages/Account';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import ChatBot from './components/ChatBot';
 import './App.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
@@ -19,6 +20,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const handleLogin = async (email, password) => {
     try {
@@ -118,6 +120,7 @@ function App() {
           <Route path="/admin" element={isLoggedIn && user?.user_type === 'admin' ? <AdminDashboard /> : <Navigate to="/login" />} />
         </Routes>
       </div>
+      {isLoggedIn && <ChatBot isOpen={chatOpen} onToggle={() => setChatOpen(!chatOpen)} />}
     </Router>
   );
 }

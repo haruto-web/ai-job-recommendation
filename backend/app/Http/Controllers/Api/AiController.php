@@ -101,4 +101,77 @@ class AiController extends Controller
             return response()->json(['suggestions' => $suggestions]);
         }
     }
+
+    public function chat(Request $request)
+    {
+        $request->validate([
+            'message' => 'required|string|max:1000'
+        ]);
+
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $message = $request->input('message');
+
+        // If OpenAI key is not configured, provide a simple fallback response
+        if (!is_string(config('services.openai.api_key')) || trim(config('services.openai.api_key')) === '') {
+            Log::info('OpenAI API key not configured - using simple fallback for chat', ['user_id' => $user->id]);
+
+            $response = $this->generateFallbackResponse($message, $user);
+            return response()->json(['response' => $response]);
+        }
+
+        try {
+            $openai = new OpenAIService();
+
+            // Build context from user's profile if available
+            $context = '';
+            if ($user->profile) {
+                $profile = $user->profile;
+                $skills = $profile->ai_analysis['skills'] ?? [];
+                $experience = $profile->extracted_experience ?? '';
+                $context = "User skills: " . implode(', ', $skills) . ". Experience: $experience.";
+            }
+
+            $systemPrompt = "You are an AI career advisor chatbot for a job recommendation website. Help users with job search, career advice, skill development, resume tips, and job matching. Be friendly, helpful, and professional. Use the provided context about the user when relevant. If asked about specific jobs, reference available job listings. Keep responses concise but informative.";
+
+            $response = $openai->getClient()->chat()->create([
+                'model' => 'gpt-3.5-turbo',
+                'messages' => [
+                    ['role' => 'system', 'content' => $systemPrompt . ' ' . $context],
+                    ['role' => 'user', 'content' => $message]
+                ],
+                'max_tokens' => 500,
+            ]);
+
+            $aiResponse = $response->choices[0]->message->content;
+
+            return response()->json(['response' => $aiResponse]);
+        } catch (\Throwable $e) {
+            Log::error('AI chat failed', ['error' => $e->getMessage()]);
+
+            // Fallback response
+            $response = $this->generateFallbackResponse($message, $user);
+            return response()->json(['response' => $response]);
+        }
+    }
+
+    private function generateFallbackResponse($message, $user)
+    {
+        $messageLower = strtolower($message);
+
+        if (str_contains($messageLower, 'job') || str_contains($messageLower, 'find') || str_contains($messageLower, 'search')) {
+            return "I'd love to help you find jobs! Please share your skills and experience, or check out our job listings page.";
+        } elseif (str_contains($messageLower, 'skill') || str_contains($messageLower, 'learn')) {
+            return "Skills are key to career growth! What skills are you interested in developing? I can provide general advice.";
+        } elseif (str_contains($messageLower, 'resume') || str_contains($messageLower, 'cv')) {
+            return "A strong resume is essential. Focus on quantifiable achievements and relevant skills. Upload your resume for AI analysis!";
+        } elseif (str_contains($messageLower, 'interview')) {
+            return "Practice common interview questions and research the company. Be prepared to discuss your experience and fit for the role.";
+        } else {
+            return "I'm here to help with your job search and career advice. What can I assist you with today?";
+        }
+    }
 }

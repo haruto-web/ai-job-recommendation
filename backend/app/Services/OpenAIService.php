@@ -8,6 +8,11 @@ class OpenAIService
 {
     protected $client;
 
+    public function getClient()
+    {
+        return $this->client;
+    }
+
     public function __construct()
     {
         $apiKey = config('services.openai.api_key');
