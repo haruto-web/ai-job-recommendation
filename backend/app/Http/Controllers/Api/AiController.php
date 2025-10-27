@@ -91,7 +91,7 @@ class AiController extends Controller
                 $context = "User skills: " . implode(', ', $skills) . ". Experience: $experience.";
             }
 
-            $systemPrompt = "You are an AI career advisor chatbot for a job recommendation website. Help users with job search, career advice, skill development, resume tips, interview preparation, networking, salary negotiation, and job matching. Be friendly, helpful, and professional. Use the provided context about the user when relevant. If asked about specific jobs, reference available job listings. Provide actionable advice and keep responses concise but informative. Always encourage next steps and offer to help further.";
+            $systemPrompt = "You are an AI career advisor chatbot for a job recommendation website. Help users with job search & matching, application help, company information, interview assistance, status updates, and career advice. Common topics include: finding jobs by location/skill/type, applying for jobs, uploading resumes, cover letter tips, company details, interview preparation, application status, and career improvement. Be friendly, helpful, and professional. Use the provided context about the user when relevant. If asked about specific jobs, reference available job listings. Provide actionable advice and keep responses concise but informative. Always encourage next steps and offer to help further.";
 
             $response = $openai->getClient()->chat()->create([
                 'model' => 'gpt-3.5-turbo',
@@ -185,22 +185,43 @@ class AiController extends Controller
     {
         $messageLower = strtolower($message);
 
-        if (str_contains($messageLower, 'job') || str_contains($messageLower, 'find') || str_contains($messageLower, 'search')) {
-            return "I'd love to help you find jobs! Please share your skills and experience, or check out our job listings page. You can also use the skills input below to get personalized recommendations.";
-        } elseif (str_contains($messageLower, 'skill') || str_contains($messageLower, 'learn')) {
-            return "Skills are key to career growth! What skills are you interested in developing? I can suggest learning paths, online courses, or how to highlight them on your resume.";
-        } elseif (str_contains($messageLower, 'resume') || str_contains($messageLower, 'cv')) {
-            return "A strong resume is essential for job hunting. Focus on quantifiable achievements, relevant skills, and tailoring it to each job. Upload your resume for AI-powered analysis and suggestions!";
-        } elseif (str_contains($messageLower, 'interview')) {
-            return "Interview preparation is crucial! Practice common questions like 'Tell me about yourself' and 'Why do you want this job.' Research the company, prepare questions for them, and be ready to discuss your experience and fit for the role.";
-        } elseif (str_contains($messageLower, 'career') || str_contains($messageLower, 'advice')) {
-            return "Career planning is important! Consider your interests, strengths, and market trends. I can help with skill development, job searching, resume tips, and interview preparation.";
-        } elseif (str_contains($messageLower, 'salary') || str_contains($messageLower, 'pay')) {
-            return "Salary negotiation is an art! Research market rates for your role and experience level. Consider total compensation including benefits. Practice your negotiation pitch.";
-        } elseif (str_contains($messageLower, 'network') || str_contains($messageLower, 'linkedin')) {
-            return "Networking is powerful! Connect with professionals on LinkedIn, attend industry events, and join relevant communities. Many jobs are filled through referrals.";
-        } else {
-            return "I'm here to help with your job search and career advice. What can I assist you with today? You can ask about jobs, skills, resumes, interviews, career planning, or salary negotiation.";
+        // Job Search & Matching
+        if (str_contains($messageLower, 'what jobs') || str_contains($messageLower, 'available for me') ||
+            str_contains($messageLower, 'show me') && str_contains($messageLower, 'jobs') ||
+            str_contains($messageLower, 'part-time') || str_contains($messageLower, 'remote') ||
+            str_contains($messageLower, 'near') || str_contains($messageLower, 'location')) {
+            return "I can help you find jobs! Check our job listings page or tell me your skills to get personalized recommendations. We have various positions including remote and part-time options.";
+        }
+        // Application Help
+        elseif (str_contains($messageLower, 'how do i apply') || str_contains($messageLower, 'upload') && str_contains($messageLower, 'résumé') ||
+                str_contains($messageLower, 'cover letter') || str_contains($messageLower, 'application')) {
+            return "To apply for jobs, visit our job listings page and click 'Apply' on any position that interests you. You can upload your resume and fill out the application form. For cover letters, highlight why you're a great fit for the role!";
+        }
+        // Company Information
+        elseif (str_contains($messageLower, 'work at') || str_contains($messageLower, 'company') ||
+                str_contains($messageLower, 'benefits') || str_contains($messageLower, 'work hours') ||
+                str_contains($messageLower, 'still open') || str_contains($messageLower, 'position')) {
+            return "For company information and job details, please check the specific job posting on our listings page. Each job includes information about requirements, benefits, and application status.";
+        }
+        // Interview Assistance
+        elseif (str_contains($messageLower, 'interview') || str_contains($messageLower, 'prepare for') ||
+                str_contains($messageLower, 'questions might') || str_contains($messageLower, 'they ask')) {
+            return "Interview prep is key! Practice common questions like 'Tell me about yourself' and 'Why do you want this job.' Research the company and prepare questions for them. I can help you practice specific scenarios!";
+        }
+        // Status Updates
+        elseif (str_contains($messageLower, 'application been received') || str_contains($messageLower, 'next step') ||
+                str_contains($messageLower, 'status') || str_contains($messageLower, 'update')) {
+            return "You can check your application status in your dashboard under 'My Applications'. We'll notify you of any updates via email or your notifications panel.";
+        }
+        // Career Advice
+        elseif (str_contains($messageLower, 'which jobs fit') || str_contains($messageLower, 'improve my résumé') ||
+                str_contains($messageLower, 'courses') || str_contains($messageLower, 'get hired faster') ||
+                str_contains($messageLower, 'career') || str_contains($messageLower, 'advice')) {
+            return "For career advice, share your skills below to get job suggestions! To improve your resume, focus on quantifiable achievements and relevant skills. Consider online courses on platforms like Coursera or Udemy to boost your employability.";
+        }
+        // General fallback
+        else {
+            return "I'm here to help with your job search! You can ask me about finding jobs, applying for positions, interview preparation, resume tips, career advice, or check our job listings page. What would you like to know?";
         }
     }
 }

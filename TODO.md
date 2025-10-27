@@ -31,3 +31,16 @@ Job Matching: Uses AI to match user profiles with job requirements
 Career Chat: Provides conversational AI assistance for job search, career advice, and skill development
 Job Suggestions: Based on user skills, suggests relevant job titles with confidence scores
 The system is designed to be robust - if OpenAI isn't available, it gracefully falls back to simpler algorithms to ensure the site remains functional.
+✅ Job Search & Matching: Finding jobs by location/skill/type, remote/part-time options
+
+✅ Application Help: How to apply, resume uploads, cover letter tips
+
+✅ Company Information: Work environment, benefits, position availability
+
+✅ Interview Assistance: Preparation help, common questions
+
+✅ Status Updates: Application tracking, next steps
+
+✅ Career Advice: Skill matching, resume improvement, course recommendations
+
+The chatbot now provides targeted responses for the most common job search queries users ask, making it more helpful and engaging for job seekers.

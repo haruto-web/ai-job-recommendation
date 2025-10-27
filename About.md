@@ -62,3 +62,18 @@ Real-time Updates: Dashboard reflects current application/job status
 Responsive Design: Works on desktop and mobile devices
 Error Handling: Comprehensive error messages and loading states
 The platform facilitates the entire job search and hiring process, from profile creation to application management, with a focus on user-friendly interfaces and robust backend validation.
+
+
+✅ Job Search & Matching: Finding jobs by location/skill/type, remote/part-time options
+
+✅ Application Help: How to apply, resume uploads, cover letter tips
+
+✅ Company Information: Work environment, benefits, position availability
+
+✅ Interview Assistance: Preparation help, common questions
+
+✅ Status Updates: Application tracking, next steps
+
+✅ Career Advice: Skill matching, resume improvement, course recommendations
+
+The chatbot now provides targeted responses for the most common job search queries users ask, making it more helpful and engaging for job seekers.
