@@ -5,9 +5,7 @@ import './ChatBot.css';
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 function ChatBot({ isOpen, onToggle }) {
-  const [messages, setMessages] = useState([
-    { role: 'bot', text: 'Hi! I\'m your AI career advisor. Share your skills or upload your resume to get personalized job recommendations!' }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [skills, setSkills] = useState('');
   const [resumeFile, setResumeFile] = useState(null);
@@ -21,6 +19,38 @@ function ChatBot({ isOpen, onToggle }) {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Load chat history on component mount
+  useEffect(() => {
+    const loadChatHistory = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await axios.get(`${API_URL}/ai/chat-history`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const historyMessages = response.data.messages.map(msg => ({
+          role: msg.role,
+          text: msg.message
+        }));
+
+        if (historyMessages.length === 0) {
+          setMessages([{ role: 'bot', text: 'Hi! I\'m your AI career advisor. Share your skills or upload your resume to get personalized job recommendations!' }]);
+        } else {
+          setMessages(historyMessages);
+        }
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+        setMessages([{ role: 'bot', text: 'Hi! I\'m your AI career advisor. Share your skills or upload your resume to get personalized job recommendations!' }]);
+      }
+    };
+
+    if (isOpen) {
+      loadChatHistory();
+    }
+  }, [isOpen]);
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
@@ -70,7 +100,7 @@ function ChatBot({ isOpen, onToggle }) {
       const suggestions = response.data.suggestions;
       let botResponse = 'Based on your skills, here are some job suggestions:\n\n';
       if (suggestions.length === 0) {
-        botResponse = 'I couldn\'t find any perfect matches for your skills in our current job listings. Here are some general recommendations:\n\n1. Consider expanding your skill set with related technologies\n2. Look for entry-level positions in your field\n3. Check back later as new jobs are posted regularly\n\nTry searching our job listings page for more options!';
+        botResponse = 'I couldn\'t find any matches for your skills in our current job listings. Here are some general recommendations:\n\n1. Consider expanding your skill set with related technologies\n2. Look for entry-level positions in your field\n3. Check back later as new jobs are posted regularly\n\nTry searching our job listings page for more options!';
       } else {
         suggestions.forEach((job, index) => {
           botResponse += `${index + 1}. ${job.title}\n   ${job.description}\n   Match: ${job.confidence}%\n\n`;

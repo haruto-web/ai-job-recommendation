@@ -231,68 +231,61 @@ class AuthController extends Controller
             }
 
             // Perform comprehensive AI analysis
-            try {
-                if (class_exists(OpenAIService::class) && is_string(config('services.openai.api_key')) && trim(config('services.openai.api_key')) !== '') {
-                    try {
-                        $openai = new OpenAIService();
-                        $analysis = $openai->analyzeResumeComprehensively($resumeText);
-
-                        if ($analysis) {
-
-                        }
-                    } catch (\Throwable $e) {
-                        Log::error('Comprehensive resume analysis failed at instantiation or call', ['error' => $e->getMessage()]);
-                    }
-
-                    if (! empty($analysis)) {
-                        // Update profile with AI analysis results
-                        $updateData = [
-                            'ai_analysis' => $analysis,
-                            'extracted_experience' => $analysis['experience_years'] ?? null,
-                            'extracted_education' => is_array($analysis['education']) ? implode(', ', $analysis['education']) : $analysis['education'] ?? null,
-                            'extracted_certifications' => is_array($analysis['certifications']) ? implode(', ', $analysis['certifications']) : $analysis['certifications'] ?? null,
-                            'extracted_languages' => is_array($analysis['languages']) ? implode(', ', $analysis['languages']) : $analysis['languages'] ?? null,
-                            'resume_summary' => $analysis['summary'] ?? null,
-                            'last_ai_analysis' => now(),
-                        ];
-
-                        // Update experience level if not already set or if AI suggests a different level
-                        if (!$profile->experience_level || $analysis['experience_level']) {
-                            $updateData['experience_level'] = $analysis['experience_level'] ?? $profile->experience_level;
-                        }
-
-                        // Merge skills with existing ones
-                        $existingSkills = is_array($profile->skills) ? $profile->skills : ($profile->skills ?? []);
-                        $aiSkills = is_array($analysis['skills']) ? $analysis['skills'] : [];
-                        $mergedSkills = array_values(array_unique(array_merge($existingSkills, $aiSkills)));
-                        $updateData['skills'] = $mergedSkills;
-
-                        $profile->update($updateData);
-
-                        Log::info('Comprehensive resume analysis completed', [
-                            'user_id' => $profile->user_id,
-                            'skills_count' => count($mergedSkills),
-                            'experience_level' => $updateData['experience_level']
-                        ]);
-
-                        // Send notification to user
-                        Notification::create([
-                            'user_id' => $profile->user_id,
-                            'type' => 'ai_analysis_complete',
-                            'title' => '🤖 Resume Analysis Complete!',
-                            'message' => 'Your resume has been analyzed by AI. Check your profile to see the insights and improve your job matches!',
-                            'data' => [
-                                'analysis_id' => $profile->id,
-                                'skills_count' => count($mergedSkills),
-                                'experience_level' => $updateData['experience_level']
-                            ]
-                        ]);
-                    }
-                } else {
-                    Log::info('OpenAIService not available; skipping comprehensive analysis');
+            $analysis = null;
+            if (class_exists(OpenAIService::class) && is_string(config('services.openai.api_key')) && trim(config('services.openai.api_key')) !== '') {
+                try {
+                    $openai = new OpenAIService();
+                    $analysis = $openai->analyzeResumeComprehensively($resumeText);
+                } catch (\Throwable $e) {
+                    Log::error('Comprehensive resume analysis failed at instantiation or call', ['error' => $e->getMessage()]);
                 }
-            } catch (\Throwable $e) {
-                Log::error('Comprehensive resume analysis failed', ['error' => $e->getMessage()]);
+            } else {
+                Log::info('OpenAIService not available; skipping comprehensive analysis');
+            }
+
+            if (! empty($analysis)) {
+                // Update profile with AI analysis results
+                $updateData = [
+                    'ai_analysis' => $analysis,
+                    'extracted_experience' => $analysis['experience_years'] ?? null,
+                    'extracted_education' => is_array($analysis['education']) ? implode(', ', $analysis['education']) : $analysis['education'] ?? null,
+                    'extracted_certifications' => is_array($analysis['certifications']) ? implode(', ', $analysis['certifications']) : $analysis['certifications'] ?? null,
+                    'extracted_languages' => is_array($analysis['languages']) ? implode(', ', $analysis['languages']) : $analysis['languages'] ?? null,
+                    'resume_summary' => $analysis['summary'] ?? null,
+                    'last_ai_analysis' => now(),
+                ];
+
+                // Update experience level if not already set or if AI suggests a different level
+                if (!$profile->experience_level || $analysis['experience_level']) {
+                    $updateData['experience_level'] = $analysis['experience_level'] ?? $profile->experience_level;
+                }
+
+                // Merge skills with existing ones
+                $existingSkills = is_array($profile->skills) ? $profile->skills : ($profile->skills ?? []);
+                $aiSkills = is_array($analysis['skills']) ? $analysis['skills'] : [];
+                $mergedSkills = array_values(array_unique(array_merge($existingSkills, $aiSkills)));
+                $updateData['skills'] = $mergedSkills;
+
+                $profile->update($updateData);
+
+                Log::info('Comprehensive resume analysis completed', [
+                    'user_id' => $profile->user_id,
+                    'skills_count' => count($mergedSkills),
+                    'experience_level' => $updateData['experience_level']
+                ]);
+
+                // Send notification to user
+                Notification::create([
+                    'user_id' => $profile->user_id,
+                    'type' => 'ai_analysis_complete',
+                    'title' => '🤖 Resume Analysis Complete!',
+                    'message' => 'Your resume has been analyzed by AI. Check your profile to see the insights and improve your job matches!',
+                    'data' => [
+                        'analysis_id' => $profile->id,
+                        'skills_count' => count($mergedSkills),
+                        'experience_level' => $updateData['experience_level']
+                    ]
+                ]);
             }
         } catch (\Throwable $e) {
             Log::error('performComprehensiveResumeAnalysis exception', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
@@ -350,7 +343,15 @@ class AuthController extends Controller
 
                     $this->performComprehensiveResumeAnalysis($path, $profile);
                 } elseif ($action === 'delete' && isset($index) && isset($resumes[$index])) {
-                    Storage::disk('public')->delete($resumes[$index]['url']);
+                    // Handle both array format ['name' => '...', 'url' => '...'] and string format 'filename.pdf'
+                    if (is_array($resumes[$index])) {
+                        Storage::disk('public')->delete($resumes[$index]['url']);
+                    } else {
+                        // If it's a string, assume it's the filename and construct the path
+                        $filename = $resumes[$index];
+                        $path = 'resumes/' . $filename;
+                        Storage::disk('public')->delete($path);
+                    }
                     unset($resumes[$index]);
                     $resumes = array_values($resumes);
                 } else {

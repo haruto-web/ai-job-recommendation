@@ -59,6 +59,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // AI resume analysis in chat
     Route::post('ai/chat-resume', [\App\Http\Controllers\Api\AiController::class, 'chatResume']);
 
+    // Get chat history
+    Route::get('ai/chat-history', [\App\Http\Controllers\Api\AiController::class, 'getChatHistory']);
+
     // Payments
     Route::get('payments', [PaymentController::class, 'index']);
     Route::post('payments', [PaymentController::class, 'store']);

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\OpenAIService;
 use App\Models\Job;
+use App\Models\ChatMessage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
@@ -51,9 +52,15 @@ class AiController extends Controller
             ];
         }
 
-        // Sort by confidence descending, but always return at least some jobs
+        // Sort by confidence descending, filter to only include jobs with confidence > 0
         usort($scored, fn($a, $b) => $b['confidence'] <=> $a['confidence']);
-        $suggestions = array_slice($scored, 0, $limit);
+        $filtered = array_filter($scored, fn($job) => $job['confidence'] > 0);
+        $suggestions = array_slice($filtered, 0, $limit);
+
+        // If no matches, return empty array (will be handled in frontend)
+        if (empty($suggestions)) {
+            $suggestions = [];
+        }
 
         return response()->json(['suggestions' => $suggestions]);
     }
@@ -71,11 +78,26 @@ class AiController extends Controller
 
         $message = $request->input('message');
 
+        // Save user message
+        ChatMessage::create([
+            'user_id' => $user->id,
+            'role' => 'user',
+            'message' => $message,
+        ]);
+
         // If OpenAI key is not configured, provide a simple fallback response
         if (!is_string(config('services.openai.api_key')) || trim(config('services.openai.api_key')) === '') {
             Log::info('OpenAI API key not configured - using simple fallback for chat', ['user_id' => $user->id]);
 
             $response = $this->generateFallbackResponse($message, $user);
+
+            // Save bot response
+            ChatMessage::create([
+                'user_id' => $user->id,
+                'role' => 'bot',
+                'message' => $response,
+            ]);
+
             return response()->json(['response' => $response]);
         }
 
@@ -86,9 +108,22 @@ class AiController extends Controller
             $context = '';
             if ($user->profile) {
                 $profile = $user->profile;
-                $skills = $profile->ai_analysis['skills'] ?? [];
-                $experience = $profile->extracted_experience ?? '';
-                $context = "User skills: " . implode(', ', $skills) . ". Experience: $experience.";
+                $context = "User profile data: ";
+                $context .= "ID: " . ($profile->id ?? '') . ". ";
+                $context .= "Bio: " . ($profile->bio ?? '') . ". ";
+                $context .= "Skills: " . (is_array($profile->skills) ? implode(', ', $profile->skills) : ($profile->skills ?? '')) . ". ";
+                $context .= "Experience level: " . ($profile->experience_level ?? '') . ". ";
+                $context .= "Education attainment: " . ($profile->education_attainment ?? '') . ". ";
+                $context .= "Portfolio URL: " . ($profile->portfolio_url ?? '') . ". ";
+                $context .= "Resume URL: " . ($profile->resume_url ?? '') . ". ";
+                $context .= "Resumes: " . (is_array($profile->resumes) ? json_encode($profile->resumes) : ($profile->resumes ?? '')) . ". ";
+                $context .= "AI analysis: " . (is_array($profile->ai_analysis) ? json_encode($profile->ai_analysis) : ($profile->ai_analysis ?? '')) . ". ";
+                $context .= "Extracted experience: " . ($profile->extracted_experience ?? '') . ". ";
+                $context .= "Extracted education: " . ($profile->extracted_education ?? '') . ". ";
+                $context .= "Extracted certifications: " . ($profile->extracted_certifications ?? '') . ". ";
+                $context .= "Extracted languages: " . ($profile->extracted_languages ?? '') . ". ";
+                $context .= "Resume summary: " . ($profile->resume_summary ?? '') . ". ";
+                $context .= "Last AI analysis: " . ($profile->last_ai_analysis ?? '') . ". ";
             }
 
             $systemPrompt = "You are an AI career advisor chatbot for a job recommendation website. Help users with job search & matching, application help, company information, interview assistance, status updates, and career advice. Common topics include: finding jobs by location/skill/type, applying for jobs, uploading resumes, cover letter tips, company details, interview preparation, application status, and career improvement. Be friendly, helpful, and professional. Use the provided context about the user when relevant. If asked about specific jobs, reference available job listings. Provide actionable advice and keep responses concise but informative. Always encourage next steps and offer to help further.";
@@ -104,12 +139,27 @@ class AiController extends Controller
 
             $aiResponse = $response->choices[0]->message->content;
 
+            // Save bot response
+            ChatMessage::create([
+                'user_id' => $user->id,
+                'role' => 'bot',
+                'message' => $aiResponse,
+            ]);
+
             return response()->json(['response' => $aiResponse]);
         } catch (\Throwable $e) {
             Log::error('AI chat failed', ['error' => $e->getMessage()]);
 
             // Fallback response
             $response = $this->generateFallbackResponse($message, $user);
+
+            // Save bot response
+            ChatMessage::create([
+                'user_id' => $user->id,
+                'role' => 'bot',
+                'message' => $response,
+            ]);
+
             return response()->json(['response' => $response]);
         }
     }
@@ -127,10 +177,26 @@ class AiController extends Controller
 
         $file = $request->file('resume');
 
+        // Save user message
+        ChatMessage::create([
+            'user_id' => $user->id,
+            'role' => 'user',
+            'message' => 'Uploaded resume: ' . $file->getClientOriginalName(),
+        ]);
+
         // If OpenAI key is not configured, provide fallback
         if (!is_string(config('services.openai.api_key')) || trim(config('services.openai.api_key')) === '') {
             Log::info('OpenAI API key not configured - using fallback for resume analysis in chat', ['user_id' => $user->id]);
-            return response()->json(['response' => 'Resume analysis is currently unavailable. Please try again later or upload your resume through the profile page for analysis.']);
+            $response = 'Resume analysis is currently unavailable. Please try again later or upload your resume through the profile page for analysis.';
+
+            // Save bot response
+            ChatMessage::create([
+                'user_id' => $user->id,
+                'role' => 'bot',
+                'message' => $response,
+            ]);
+
+            return response()->json(['response' => $response]);
         }
 
         try {
@@ -141,15 +207,47 @@ class AiController extends Controller
             $resumeText = $parser->parseResume($file->getRealPath());
 
             if (empty($resumeText)) {
-                return response()->json(['response' => 'I couldn\'t read your resume. Please ensure it\'s a valid PDF, DOC, or DOCX file.']);
+                $response = 'I couldn\'t read your resume. Please ensure it\'s a valid PDF, DOC, or DOCX file.';
+
+                // Save bot response
+                ChatMessage::create([
+                    'user_id' => $user->id,
+                    'role' => 'bot',
+                    'message' => $response,
+                ]);
+
+                return response()->json(['response' => $response]);
             }
 
             // Extract skills and analyze
             $skills = $openai->extractSkillsFromResume($resumeText);
             $analysis = $openai->analyzeResumeComprehensively($resumeText);
 
-            // Generate job suggestions based on extracted skills
-            $jobSuggestions = $openai->suggestJobsForSkills($skills, $analysis['experience_years'] ?? '', 3);
+            // Generate job suggestions based on extracted skills using local matching
+            $jobs = Job::all();
+            $skillsLower = array_map(fn($s) => strtolower($s), $skills);
+
+            $scored = [];
+            foreach ($jobs as $job) {
+                $text = strtolower($job->title . ' ' . ($job->description ?? '') . ' ' . ($job->requirements ? json_encode($job->requirements) : ''));
+                $matchCount = 0;
+                foreach ($skillsLower as $skill) {
+                    if ($skill === '') continue;
+                    if (str_contains($text, $skill)) $matchCount++;
+                }
+                $confidence = $matchCount > 0 ? min(100, (int) floor(($matchCount / max(1, count($skillsLower))) * 100)) : 0;
+
+                if ($confidence > 0) {
+                    $scored[] = [
+                        'title' => $job->title,
+                        'description' => strlen($job->description ?? '') > 100 ? substr($job->description, 0, 97) . '...' : ($job->description ?? ''),
+                        'confidence' => $confidence,
+                    ];
+                }
+            }
+
+            usort($scored, fn($a, $b) => $b['confidence'] <=> $a['confidence']);
+            $jobSuggestions = array_slice($scored, 0, 3);
 
             // Build response
             $response = "I've analyzed your resume! Here's what I found:\n\n";
@@ -166,19 +264,53 @@ class AiController extends Controller
                 $response .= "📝 Summary: " . $analysis['summary'] . "\n\n";
             }
 
-            $response .= "💼 Based on your profile, here are some job suggestions:\n\n";
-            foreach ($jobSuggestions as $job) {
-                $response .= "• " . $job['title'] . " (" . ($job['confidence'] ?? $job['recommended_level'] ?? 'N/A') . ")\n";
-                $response .= "  " . substr($job['description'], 0, 100) . "...\n\n";
+            if (!empty($jobSuggestions)) {
+                $response .= "💼 Based on your profile, here are some job suggestions:\n\n";
+                foreach ($jobSuggestions as $job) {
+                    $response .= "• " . $job['title'] . " (Match: " . $job['confidence'] . "%)\n";
+                    $response .= "  " . $job['description'] . "\n\n";
+                }
+                $response .= "Would you like me to elaborate on any of these suggestions or help with your job search?";
+            } else {
+                $response .= "I couldn't find any specific job matches based on your resume. Try sharing your skills directly for better recommendations!";
             }
 
-            $response .= "Would you like me to elaborate on any of these suggestions or help with your job search?";
+            // Save bot response
+            ChatMessage::create([
+                'user_id' => $user->id,
+                'role' => 'bot',
+                'message' => $response,
+            ]);
 
             return response()->json(['response' => $response]);
         } catch (\Throwable $e) {
             Log::error('Resume chat analysis failed', ['error' => $e->getMessage()]);
-            return response()->json(['response' => 'I encountered an issue analyzing your resume. Please try uploading it through your profile page instead, or contact support if the problem persists.']);
+            $response = 'I encountered an issue analyzing your resume. Please try uploading it through your profile page instead, or contact support if the problem persists.';
+
+            // Save bot response
+            ChatMessage::create([
+                'user_id' => $user->id,
+                'role' => 'bot',
+                'message' => $response,
+            ]);
+
+            return response()->json(['response' => $response]);
         }
+    }
+
+    public function getChatHistory(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $messages = ChatMessage::where('user_id', $user->id)
+            ->orderBy('created_at', 'asc')
+            ->limit(100)
+            ->get(['role', 'message', 'created_at']);
+
+        return response()->json(['messages' => $messages]);
     }
 
     private function generateFallbackResponse($message, $user)
@@ -189,8 +321,48 @@ class AiController extends Controller
         if (str_contains($messageLower, 'what jobs') || str_contains($messageLower, 'available for me') ||
             str_contains($messageLower, 'show me') && str_contains($messageLower, 'jobs') ||
             str_contains($messageLower, 'part-time') || str_contains($messageLower, 'remote') ||
-            str_contains($messageLower, 'near') || str_contains($messageLower, 'location')) {
-            return "I can help you find jobs! Check our job listings page or tell me your skills to get personalized recommendations. We have various positions including remote and part-time options.";
+            str_contains($messageLower, 'near') || str_contains($messageLower, 'location') ||
+            str_contains($messageLower, 'jobs')) {
+            // Check if user has profile/skills
+            $profile = $user->profile;
+            $hasSkills = $profile && is_array($profile->skills) && count($profile->skills) > 0;
+            if ($hasSkills) {
+                $skills = $profile->skills;
+                // Use local job matching to suggest jobs
+                $jobs = Job::all();
+                $skillsLower = array_map(fn($s) => strtolower($s), $skills);
+                $scored = [];
+                foreach ($jobs as $job) {
+                    $text = strtolower($job->title . ' ' . ($job->description ?? '') . ' ' . ($job->requirements ? json_encode($job->requirements) : ''));
+                    $matchCount = 0;
+                    foreach ($skillsLower as $skill) {
+                        if ($skill === '') continue;
+                        if (str_contains($text, $skill)) $matchCount++;
+                    }
+                    $confidence = $matchCount > 0 ? min(100, (int) floor(($matchCount / max(1, count($skillsLower))) * 100)) : 0;
+                    if ($confidence > 0) {
+                        $scored[] = [
+                            'title' => $job->title,
+                            'description' => strlen($job->description ?? '') > 100 ? substr($job->description, 0, 97) . '...' : ($job->description ?? ''),
+                            'confidence' => $confidence,
+                        ];
+                    }
+                }
+                usort($scored, fn($a, $b) => $b['confidence'] <=> $a['confidence']);
+                $suggestions = array_slice($scored, 0, 3);
+                if (!empty($suggestions)) {
+                    $response = "Based on your skills (" . implode(', ', $skills) . "), here are some job suggestions:\n\n";
+                    foreach ($suggestions as $job) {
+                        $response .= "• " . $job['title'] . " (Match: " . $job['confidence'] . "%)\n  " . $job['description'] . "\n\n";
+                    }
+                    $response .= "Would you like me to help you apply to any of these jobs or provide more details?";
+                    return $response;
+                } else {
+                    return "I couldn't find any strong matches for your current skills. Try updating your profile with more specific skills or upload your resume for better suggestions!";
+                }
+            } else {
+                return "To get personalized job suggestions, please update your profile with your skills or upload your resume. You can do this in your profile section!";
+            }
         }
         // Application Help
         elseif (str_contains($messageLower, 'how do i apply') || str_contains($messageLower, 'upload') && str_contains($messageLower, 'résumé') ||
